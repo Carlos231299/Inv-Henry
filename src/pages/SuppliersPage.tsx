@@ -1,0 +1,244 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Search, UserSquare2, Phone, Mail } from 'lucide-react';
+import api from '../services/api';
+import { toast } from 'sonner';
+import Swal from 'sweetalert2';
+
+interface Supplier {
+  id: number;
+  name: string;
+  nit: string;
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export const SuppliersPage: React.FC = () => {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    nit: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
+
+  const fetchData = async () => {
+    try {
+      const res = await api.get('/suppliers');
+      setSuppliers(res.data);
+    } catch (error) {
+      toast.error('Error al cargar proveedores');
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingSupplier) {
+        await api.put(`/suppliers/${editingSupplier.id}`, formData);
+        toast.success('Proveedor actualizado');
+      } else {
+        await api.post('/suppliers', formData);
+        toast.success('Proveedor creado');
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Error al guardar');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const result = await Swal.fire({
+      title: '¿Eliminar proveedor?',
+      text: "Esta acción no se puede deshacer",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0369a1',
+      confirmButtonText: 'Sí, eliminar',
+      customClass: { popup: 'rounded-3xl', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/suppliers/${id}`);
+        toast.success('Proveedor eliminado');
+        fetchData();
+      } catch (error) {
+        toast.error('Error al eliminar');
+      }
+    }
+  };
+
+  const filteredSuppliers = suppliers.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (s.nit && s.nit.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Proveedores</h2>
+          <p className="text-slate-500">Gestión de proveedores de Henry SAS</p>
+        </div>
+        <button 
+          onClick={() => {
+            setEditingSupplier(null);
+            setFormData({ name: '', contact_name: '', phone: '', email: '', address: '' });
+            setIsModalOpen(true);
+          }}
+          className="btn btn-primary gap-2 rounded-xl"
+        >
+          <Plus size={20} />
+          Nuevo Proveedor
+        </button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o contacto..."
+              className="input input-bordered w-full pl-10 rounded-xl focus:ring-2 focus:ring-brand-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr className="text-slate-500">
+                <th className="bg-white">Proveedor</th>
+                <th className="bg-white">NIT</th>
+                <th className="bg-white">Teléfono</th>
+                <th className="bg-white">Email</th>
+                <th className="bg-white text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSuppliers.map((s) => (
+                <tr key={s.id} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-slate-100 rounded-lg text-slate-400">
+                        <UserSquare2 size={20} />
+                      </div>
+                      <div className="font-bold text-slate-800">{s.name}</div>
+                    </div>
+                  </td>
+                  <td>{s.nit}</td>
+                  <td>
+                    <div className="flex items-center gap-1 text-slate-600">
+                      <Phone size={14} /> {s.phone}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-1 text-slate-600">
+                      <Mail size={14} /> {s.email}
+                    </div>
+                  </td>
+                  <td className="text-right space-x-1">
+                    <button 
+                      onClick={() => {
+                        setEditingSupplier(s);
+                        setFormData({ ...s });
+                        setIsModalOpen(true);
+                      }}
+                      className="btn btn-ghost btn-sm text-brand-600 rounded-lg"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} className="btn btn-ghost btn-sm text-red-500 rounded-lg">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">
+                {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control md:col-span-2">
+                  <label className="label"><span className="label-text font-semibold">Nombre de la Empresa</span></label>
+                  <input
+                    type="text"
+                    className="input input-bordered rounded-xl"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label"><span className="label-text font-semibold">NIT / Documento</span></label>
+                  <input
+                    type="text"
+                    className="input input-bordered rounded-xl"
+                    value={formData.nit}
+                    onChange={(e) => setFormData({...formData, nit: e.target.value})}
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label"><span className="label-text font-semibold">Teléfono</span></label>
+                  <input
+                    type="text"
+                    className="input input-bordered rounded-xl"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label"><span className="label-text font-semibold">Email</span></label>
+                  <input
+                    type="email"
+                    className="input input-bordered rounded-xl"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label"><span className="label-text font-semibold">Dirección</span></label>
+                  <input
+                    type="text"
+                    className="input input-bordered rounded-xl"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-6">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost flex-1 rounded-xl">Cancelar</button>
+                <button type="submit" className="btn btn-primary flex-1 rounded-xl">Guardar Proveedor</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
