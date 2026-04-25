@@ -66,77 +66,133 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Bienvenido, {user?.name || 'Admin'}</h2>
-        <p className="text-slate-500">Aquí tienes un resumen de lo que sucede hoy en Henry SAS.</p>
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Panel de Control</h2>
+          <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de Henry SAS.</p>
+        </div>
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
+          <button className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-sm font-bold">Hoy</button>
+          <button className="px-4 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-colors">Semana</button>
+          <button className="px-4 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-colors">Mes</button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Ventas Totales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
-        <StatCard title="Productos en Stock" value={stats.totalProducts.toString()} icon={Package} />
+        <StatCard title="Productos en Stock" value={stats.totalProducts.toLocaleString()} icon={Package} />
         <StatCard title="Nuevos Clientes" value={stats.totalCustomers.toString()} icon={Users} trend="up" trendValue="8" />
         <StatCard title="Ingresos Estimados" value={formatCurrency(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Ventas Recientes</h3>
-          <div className="space-y-4">
-            {stats.recentSales.map((sale) => (
-              <div key={sale.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
-                    {sale.customer_name?.charAt(0) || 'C'}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{sale.customer_name || 'Venta General'}</p>
-                    <p className="text-xs text-slate-500">{new Date(sale.date).toLocaleTimeString()}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-brand-600">+{formatCurrency(sale.total)}</p>
-                  <p className="text-xs text-slate-400 capitalize">{sale.payment_method}</p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Sales Chart Placeholder */}
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h3 className="text-xl font-black text-slate-800">Rendimiento de Ventas</h3>
+              <p className="text-slate-400 text-sm font-medium">Visualización de ingresos semanales</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <span className="w-3 h-3 rounded-full bg-brand-500"></span> Ventas
               </div>
-            ))}
-            {stats.recentSales.length === 0 && <p className="text-center py-4 text-slate-400">No hay ventas recientes</p>}
+            </div>
           </div>
-          <button className="w-full mt-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50 rounded-xl transition-colors">
-            Ver todas las ventas
-          </button>
+          
+          <div className="h-64 w-full relative">
+            <svg viewBox="0 0 800 200" className="w-full h-full drop-shadow-2xl">
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path 
+                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40" 
+                fill="none" 
+                stroke="#0ea5e9" 
+                strokeWidth="4" 
+                strokeLinecap="round" 
+                className="animate-dash"
+              />
+              <path 
+                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40 L 800 200 L 0 200 Z" 
+                fill="url(#gradient)" 
+              />
+              {/* Points */}
+              <circle cx="200" cy="120" r="6" fill="white" stroke="#0ea5e9" strokeWidth="3" />
+              <circle cx="400" cy="60" r="6" fill="white" stroke="#0ea5e9" strokeWidth="3" />
+              <circle cx="600" cy="100" r="6" fill="white" stroke="#0ea5e9" strokeWidth="3" />
+            </svg>
+          </div>
+          
+          <div className="flex justify-between mt-6 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
+          </div>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Stock Bajo</h3>
-          <div className="space-y-4">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+          <h3 className="text-xl font-black text-slate-800 mb-6">Stock Crítico</h3>
+          <div className="flex-1 space-y-4">
             {stats.lowStockProducts.map((product) => (
-              <div key={product.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50">
+              <div key={product.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group hover:bg-red-50/30 hover:border-red-100 transition-all cursor-default">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
                     <Package size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800">{product.name}</p>
-                    <p className="text-xs text-slate-500">SKU: {product.code}</p>
+                    <p className="text-sm font-bold text-slate-800 truncate w-32">{product.name}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Stock: {product.stock}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-red-500">{product.stock} unid.</p>
-                  <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1">
-                    <div
-                      className="h-full bg-red-500 rounded-full"
-                      style={{ width: `${Math.min(100, (product.stock / product.min_stock) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
+                <div className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-[10px] font-black uppercase">Crítico</div>
               </div>
             ))}
-            {stats.lowStockProducts.length === 0 && <p className="text-center py-4 text-slate-400">Todo el stock está normal</p>}
+            {stats.lowStockProducts.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-4 py-10">
+                <div className="p-4 bg-emerald-50 text-emerald-500 rounded-full">
+                  <TrendingUp size={32} />
+                </div>
+                <p className="text-sm font-bold">Todo el stock está normal</p>
+              </div>
+            )}
           </div>
-          <button className="w-full mt-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50 rounded-xl transition-colors">
-            Gestionar inventario
+          <button className="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200">
+            Revisar Inventario
           </button>
+        </div>
+      </div>
+
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-xl font-black text-slate-800">Actividad de Ventas</h3>
+          <button className="text-brand-600 text-sm font-bold hover:underline">Ver Historial</button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.recentSales.map((sale) => (
+            <div key={sale.id} className="p-5 rounded-3xl bg-slate-50/30 border border-slate-100 hover:shadow-xl hover:shadow-slate-100 transition-all group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-600 font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                  {sale.customer_name?.charAt(0) || 'C'}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 line-clamp-1">{sale.customer_name || 'Consumidor Final'}</p>
+                  <p className="text-[10px] font-bold text-slate-400">{new Date(sale.date).toLocaleTimeString()}</p>
+                </div>
+              </div>
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</p>
+                  <p className="text-lg font-black text-brand-600">{formatCurrency(sale.total)}</p>
+                </div>
+                <div className="px-2 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 capitalize">
+                  {sale.payment_method}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

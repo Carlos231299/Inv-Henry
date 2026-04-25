@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Package, Barcode } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Package, Barcode, TrendingUp } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
@@ -100,12 +100,15 @@ export const ProductsPage: React.FC = () => {
     p.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalValue = products.reduce((acc, p) => acc + (p.stock * p.price_buy), 0);
+  const lowStockCount = products.filter(p => p.stock <= p.min_stock).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Productos</h2>
-          <p className="text-slate-500">Inventario total de Henry SAS</p>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Inventario de Productos</h2>
+          <p className="text-slate-500 font-medium">Gestiona y controla las existencias de Henry SAS.</p>
         </div>
         <button 
           onClick={() => {
@@ -117,11 +120,47 @@ export const ProductsPage: React.FC = () => {
             });
             setIsModalOpen(true);
           }}
-          className="btn btn-primary gap-2 rounded-xl"
+          className="btn btn-primary h-14 px-8 gap-3 rounded-2xl shadow-xl shadow-brand-200 border-none normal-case text-lg font-bold"
         >
-          <Plus size={20} />
+          <Plus size={24} />
           Nuevo Producto
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-brand-50 text-brand-600 rounded-2xl">
+              <Package size={24} />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Total Productos</p>
+              <h3 className="text-2xl font-black text-slate-800">{products.length}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+              <TrendingUp size={24} />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Valor Inventario</p>
+              <h3 className="text-2xl font-black text-slate-800">{formatCurrency(totalValue)}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+              <Barcode size={24} />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Stock Crítico</p>
+              <h3 className="text-2xl font-black text-slate-800">{lowStockCount}</h3>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
