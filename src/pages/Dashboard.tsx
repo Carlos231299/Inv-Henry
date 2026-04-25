@@ -68,7 +68,7 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Bienvenido, {user?.name || 'Admin'}</h2>
-        <p className="text-slate-500">Aquí tienes un resumen de lo que sucede hoy en Henry SAS.</p>
+        <p className="text-slate-500">Aquí prueba sucede hoy en Henry SAS.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -123,8 +123,8 @@ export const Dashboard: React.FC = () => {
                 <div className="text-right">
                   <p className="text-sm font-bold text-red-500">{product.stock} unid.</p>
                   <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1">
-                    <div 
-                      className="h-full bg-red-500 rounded-full" 
+                    <div
+                      className="h-full bg-red-500 rounded-full"
                       style={{ width: `${Math.min(100, (product.stock / product.min_stock) * 100)}%` }}
                     ></div>
                   </div>
