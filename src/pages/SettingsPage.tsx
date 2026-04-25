@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Shield, Bell, Database, Globe, Palette } from 'lucide-react';
+import { Settings, Shield, Bell, Database, Globe } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const sections = [

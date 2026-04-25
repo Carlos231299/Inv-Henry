@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Truck, Calendar, DollarSign, Package, Trash2, Minus, ShoppingCart } from 'lucide-react';
+import { Plus, Search, Truck, Trash2, Minus, ShoppingCart, DollarSign } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
-import Swal from 'sweetalert2';
+// import Swal from 'sweetalert2';
 import { formatCurrency } from '../utils/currency';
 
 interface Product {
@@ -115,20 +115,43 @@ export const PurchasesPage: React.FC = () => {
     p.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalInvestment = purchases.reduce((acc, p) => acc + p.total, 0);
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Compras</h2>
-          <p className="text-slate-500">Historial e ingreso de mercancía</p>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Registro de Compras</h2>
+          <p className="text-slate-500 font-medium">Controla el ingreso de mercancía y costos.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary gap-2 rounded-xl"
+          className="btn btn-primary h-14 px-8 gap-3 rounded-2xl shadow-xl shadow-brand-200 border-none normal-case text-lg font-bold"
         >
-          <Plus size={20} />
+          <Plus size={24} />
           Registrar Compra
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-[1.5rem] flex items-center justify-center">
+            <DollarSign size={32} />
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Inversión Total</p>
+            <h3 className="text-3xl font-black text-slate-800">{formatCurrency(totalInvestment)}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-[1.5rem] flex items-center justify-center">
+            <Truck size={32} />
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Total Compras</p>
+            <h3 className="text-3xl font-black text-slate-800">{purchases.length}</h3>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">

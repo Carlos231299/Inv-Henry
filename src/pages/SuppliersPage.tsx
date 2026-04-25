@@ -84,23 +84,44 @@ export const SuppliersPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Proveedores</h2>
-          <p className="text-slate-500">Gestión de proveedores de Henry SAS</p>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Gestión de Proveedores</h2>
+          <p className="text-slate-500 font-medium">Mantén el contacto con tus aliados comerciales.</p>
         </div>
         <button 
           onClick={() => {
             setEditingSupplier(null);
-            setFormData({ name: '', contact_name: '', phone: '', email: '', address: '' });
+            setFormData({ name: '', nit: '', phone: '', email: '', address: '' });
             setIsModalOpen(true);
           }}
-          className="btn btn-primary gap-2 rounded-xl"
+          className="btn btn-primary h-14 px-8 gap-3 rounded-2xl shadow-xl shadow-brand-200 border-none normal-case text-lg font-bold"
         >
-          <Plus size={20} />
+          <Plus size={24} />
           Nuevo Proveedor
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-[1.5rem] flex items-center justify-center">
+            <UserSquare2 size={32} />
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Proveedores Activos</p>
+            <h3 className="text-3xl font-black text-slate-800">{suppliers.length}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-[1.5rem] flex items-center justify-center">
+            <Mail size={32} />
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Correos Pendientes</p>
+            <h3 className="text-3xl font-black text-slate-800">0</h3>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">

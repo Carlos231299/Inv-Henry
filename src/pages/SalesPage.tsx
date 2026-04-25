@@ -29,7 +29,6 @@ export const SalesPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [cashReceived, setCashReceived] = useState<number>(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,7 +159,7 @@ export const SalesPage: React.FC = () => {
           </div>
           <div class="flex-between">
             <span>Recibido:</span>
-            <span>${sale.cash_received ? formatCurrency(sale.cash_received) : formatCurrency(0)}</span>
+            <span>${formatCurrency(sale.cash_received || 0)}</span>
           </div>
           <div class="flex-between">
             <span>Cambio:</span>
@@ -178,7 +177,7 @@ export const SalesPage: React.FC = () => {
           <script>
             window.onload = () => {
               window.print();
-              setTimeout(() => window.close(), 500);
+              // setTimeout(() => window.close(), 500);
             };
           </script>
         </body>
@@ -199,7 +198,7 @@ export const SalesPage: React.FC = () => {
           <p>Total a cobrar: <b>${formatCurrency(total)}</b></p>
           <div class="form-control">
             <label class="label"><span class="label-text">Efectivo Recibido</span></label>
-            <input type="number" id="swal-cash" class="input input-bordered w-full" value="${cashReceived || total}">
+            <input type="number" id="swal-cash" class="input input-bordered w-full" value="${total}">
           </div>
         </div>
       `,
@@ -237,7 +236,6 @@ export const SalesPage: React.FC = () => {
         setCart([]);
         setSelectedCustomer('');
 
-        // Refetch products to update stock
         const pRes = await api.get('/products');
         setProducts(pRes.data);
 
@@ -253,106 +251,119 @@ export const SalesPage: React.FC = () => {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-180px)]">
-      {/* Product Selection */}
-      <div className="lg:col-span-2 flex flex-col space-y-4">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              className="input input-bordered w-full pl-12 rounded-2xl h-14 text-lg shadow-sm focus:ring-2 focus:ring-brand-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="w-64">
-            <select 
-              className="select select-bordered w-full h-14 rounded-2xl"
-              value={selectedCustomer}
-              onChange={(e) => setSelectedCustomer(e.target.value)}
-            >
-              <option value="">Consumidor Final</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-100 flex-1 overflow-auto p-4 shadow-sm">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredProducts.map(product => (
-              <button
-                key={product.id}
-                onClick={() => addToCart(product)}
-                disabled={product.stock <= 0}
-                className="flex flex-col p-4 rounded-2xl border border-slate-50 hover:border-brand-200 hover:bg-brand-50/30 transition-all text-left group disabled:opacity-50"
-              >
-                <div className="font-bold text-slate-800 line-clamp-1">{product.name}</div>
-                <div className="text-xs text-slate-500 mb-2">Stock: {product.stock}</div>
-                <div className="mt-auto flex justify-between items-center w-full">
-                  <span className="text-brand-600 font-bold">{formatCurrency(product.price_sell)}</span>
-                  <div className="p-2 bg-slate-100 group-hover:bg-brand-500 group-hover:text-white rounded-xl transition-colors">
-                    <Plus size={16} />
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Punto de Venta</h2>
+          <p className="text-slate-500 font-medium">Realiza ventas de forma rápida y sencilla.</p>
         </div>
       </div>
 
-      {/* Cart / Checkout */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl flex flex-col overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="text-brand-600" />
-            <h3 className="font-bold text-slate-800">Carrito</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+        <div className="lg:col-span-2 flex flex-col space-y-4">
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar producto por nombre o código..."
+                className="input input-bordered w-full pl-12 rounded-2xl h-14 text-lg shadow-sm focus:ring-4 focus:ring-brand-500/10 border-slate-100"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="w-64">
+              <select 
+                className="select select-bordered w-full h-14 rounded-2xl border-slate-100 shadow-sm font-bold text-slate-700"
+                value={selectedCustomer}
+                onChange={(e) => setSelectedCustomer(e.target.value)}
+              >
+                <option value="">Consumidor Final</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
           </div>
-          <span className="badge badge-primary rounded-lg">{cart.length} items</span>
+
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 flex-1 overflow-hidden flex flex-col shadow-sm">
+            <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+              <h3 className="font-black text-slate-800 uppercase tracking-widest text-xs">Catálogo de Productos</h3>
+              <span className="badge badge-ghost font-bold rounded-lg">{filteredProducts.length} disponibles</span>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {filteredProducts.map(product => (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    disabled={product.stock <= 0}
+                    className="flex flex-col p-4 rounded-3xl border border-slate-50 hover:border-brand-200 hover:bg-brand-50/30 transition-all text-left group disabled:opacity-50 relative overflow-hidden bg-white shadow-sm hover:shadow-md"
+                  >
+                    <div className="font-black text-slate-800 line-clamp-1 mb-1">{product.name}</div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-4">Stock: {product.stock}</div>
+                    <div className="mt-auto flex justify-between items-center w-full">
+                      <span className="text-brand-600 font-black text-lg">{formatCurrency(product.price_sell)}</span>
+                      <div className="p-2 bg-slate-100 group-hover:bg-brand-500 group-hover:text-white rounded-xl transition-colors">
+                        <Plus size={18} />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-6 space-y-4">
-          {cart.map(item => (
-            <div key={item.id} className="flex flex-col p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
-              <div className="flex justify-between mb-2">
-                <span className="font-bold text-slate-800">{item.name}</span>
-                <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center bg-white rounded-xl border border-slate-200 p-1">
-                  <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:text-brand-600"><Minus size={14} /></button>
-                  <span className="px-3 font-bold text-sm">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:text-brand-600"><Plus size={14} /></button>
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="text-brand-600" />
+              <h3 className="font-bold text-slate-800">Carrito</h3>
+            </div>
+            <span className="badge badge-primary rounded-lg">{cart.length} items</span>
+          </div>
+
+          <div className="flex-1 overflow-auto p-6 space-y-4">
+            {cart.map(item => (
+              <div key={item.id} className="flex flex-col p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                <div className="flex justify-between mb-2">
+                  <span className="font-bold text-slate-800">{item.name}</span>
+                  <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600">
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <span className="font-bold text-slate-700">{formatCurrency(item.price_sell * item.quantity)}</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center bg-white rounded-xl border border-slate-200 p-1">
+                    <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:text-brand-600"><Minus size={14} /></button>
+                    <span className="px-3 font-bold text-sm">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:text-brand-600"><Plus size={14} /></button>
+                  </div>
+                  <span className="font-bold text-slate-700">{formatCurrency(item.price_sell * item.quantity)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-6 border-t border-slate-100 bg-slate-50/50 space-y-4">
+            <div className="flex gap-2">
+              <button onClick={() => setPaymentMethod('efectivo')} className={`flex-1 flex flex-col items-center p-3 rounded-2xl border ${paymentMethod === 'efectivo' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600'}`}>
+                <Banknote size={20} /> <span className="text-xs mt-1">Efectivo</span>
+              </button>
+              <button onClick={() => setPaymentMethod('tarjeta')} className={`flex-1 flex flex-col items-center p-3 rounded-2xl border ${paymentMethod === 'tarjeta' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600'}`}>
+                <CreditCard size={20} /> <span className="text-xs mt-1">Tarjeta</span>
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex justify-between text-2xl font-black text-slate-900">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="p-6 border-t border-slate-100 bg-slate-50/50 space-y-4">
-          <div className="flex gap-2">
-            <button onClick={() => setPaymentMethod('efectivo')} className={`flex-1 flex flex-col items-center p-3 rounded-2xl border ${paymentMethod === 'efectivo' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600'}`}>
-              <Banknote size={20} /> <span className="text-xs mt-1">Efectivo</span>
-            </button>
-            <button onClick={() => setPaymentMethod('tarjeta')} className={`flex-1 flex flex-col items-center p-3 rounded-2xl border ${paymentMethod === 'tarjeta' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600'}`}>
-              <CreditCard size={20} /> <span className="text-xs mt-1">Tarjeta</span>
+            <button onClick={handleCheckout} disabled={cart.length === 0} className="w-full btn btn-primary h-14 rounded-2xl text-lg shadow-xl shadow-brand-900/20">
+              <Printer size={20} className="mr-2" /> Finalizar Venta
             </button>
           </div>
-
-          <div className="space-y-1">
-            <div className="flex justify-between text-2xl font-black text-slate-900">
-              <span>Total</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-          </div>
-
-          <button onClick={handleCheckout} disabled={cart.length === 0} className="w-full btn btn-primary h-14 rounded-2xl text-lg shadow-xl shadow-brand-900/20">
-            <Printer size={20} className="mr-2" /> Finalizar Venta
-          </button>
         </div>
       </div>
     </div>
