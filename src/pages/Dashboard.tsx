@@ -3,6 +3,7 @@ import { ShoppingCart, Package, Users, TrendingUp, ArrowUpRight, ArrowDownRight 
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/currency';
+import { cn } from '../utils/cn';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -24,6 +25,8 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const [filter, setFilter] = useState('hoy');
+  const [allSales, setAllSales] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProducts: 0,
@@ -33,6 +36,38 @@ export const Dashboard: React.FC = () => {
     lowStockProducts: [] as any[]
   });
 
+  const calculateStats = (sales: any[], products: any[], customers: any[], currentFilter: string) => {
+    const now = new Date();
+    const filteredSales = sales.filter((sale: any) => {
+      const saleDate = new Date(sale.date);
+      if (currentFilter === 'hoy') {
+        return saleDate.toDateString() === now.toDateString();
+      } else if (currentFilter === 'semana') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return saleDate >= weekAgo;
+      } else if (currentFilter === 'mes') {
+        const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
+        return saleDate >= monthAgo;
+      }
+      return true;
+    });
+
+    const totalSalesValue = filteredSales.reduce((acc: number, s: any) => acc + s.total, 0);
+    const lowStock = products.filter((p: any) => p.stock <= p.min_stock).slice(0, 4);
+
+    setStats({
+      totalSales: totalSalesValue,
+      totalProducts: products.reduce((acc: number, p: any) => acc + p.stock, 0),
+      totalCustomers: customers.length,
+      netIncome: totalSalesValue * 0.3,
+      recentSales: filteredSales.slice(0, 4),
+      lowStockProducts: lowStock
+    });
+  };
+
+  const [rawProducts, setRawProducts] = useState([]);
+  const [rawCustomers, setRawCustomers] = useState([]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -41,29 +76,22 @@ export const Dashboard: React.FC = () => {
           api.get('/products'),
           api.get('/customers')
         ]);
-
-        const sales = salesRes.data;
-        const products = prodRes.data;
-        const customers = custRes.data;
-
-        const totalSalesValue = sales.reduce((acc: number, s: any) => acc + s.total, 0);
-        const lowStock = products.filter((p: any) => p.stock <= p.min_stock).slice(0, 4);
-
-        setStats({
-          totalSales: totalSalesValue,
-          totalProducts: products.reduce((acc: number, p: any) => acc + p.stock, 0),
-          totalCustomers: customers.length,
-          netIncome: totalSalesValue * 0.3, // Example margin
-          recentSales: sales.slice(0, 4),
-          lowStockProducts: lowStock
-        });
+        setAllSales(salesRes.data);
+        setRawProducts(prodRes.data);
+        setRawCustomers(custRes.data);
+        calculateStats(salesRes.data, prodRes.data, custRes.data, filter);
       } catch (error) {
         console.error('Error fetching dashboard data');
       }
     };
-
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (allSales.length > 0) {
+      calculateStats(allSales, rawProducts, rawCustomers, filter);
+    }
+  }, [filter]);
 
   return (
     <div className="space-y-8 pb-10">
@@ -73,9 +101,18 @@ export const Dashboard: React.FC = () => {
           <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de Henry SAS.</p>
         </div>
         <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
-          <button className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-sm font-bold">Hoy</button>
-          <button className="px-4 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-colors">Semana</button>
-          <button className="px-4 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-colors">Mes</button>
+          {['hoy', 'semana', 'mes'].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-sm font-bold transition-all capitalize",
+                filter === f ? "bg-brand-600 text-white shadow-md shadow-brand-200" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {f}
+            </button>
+          ))}
         </div>
       </div>
 

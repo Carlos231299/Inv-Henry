@@ -177,18 +177,18 @@ const seedData = async () => {
   }
 
   const products = [
-    { code: 'PROD001', name: 'Mouse Inalámbrico', description: 'Mouse óptico ergonómico', price_buy: 15.00, price_sell: 25.00, stock: 50, min_stock: 10, category_id: 1 },
-    { code: 'PROD002', name: 'Teclado Mecánico', description: 'Teclado RGB switch blue', price_buy: 35.00, price_sell: 60.00, stock: 20, min_stock: 5, category_id: 1 },
-    { code: 'PROD003', name: 'Cuaderno Profesional', description: '100 hojas cuadriculado', price_buy: 2.50, price_sell: 4.00, stock: 100, min_stock: 20, category_id: 2 },
-    { code: 'PROD004', name: 'Monitor 24" IPS', description: 'Monitor Full HD 75Hz', price_buy: 120.00, price_sell: 180.00, stock: 10, min_stock: 3, category_id: 1 },
-    { code: 'PROD005', name: 'Resma Papel Bond', description: '500 hojas tamaño carta', price_buy: 12.00, price_sell: 18.00, stock: 40, min_stock: 10, category_id: 2 },
-    { code: 'PROD006', name: 'Detergente Líquido', description: 'Galón 3.7L fragancia limón', price_buy: 8.00, price_sell: 14.50, stock: 25, min_stock: 5, category_id: 3 },
-    { code: 'PROD007', name: 'Chorizo Henjur', description: 'Paquete x 5 unidades', price_buy: 10.00, price_sell: 16.00, stock: 30, min_stock: 5, category_id: 3 },
-    { code: 'PROD008', name: 'Carne de Res Premium', description: 'Corte fino 1kg', price_buy: 18.00, price_sell: 28.00, stock: 15, min_stock: 5, category_id: 3 },
-    { code: 'PROD009', name: 'Pollo Entero', description: 'Pollo fresco 2kg aprox', price_buy: 12.00, price_sell: 22.00, stock: 20, min_stock: 5, category_id: 3 },
-    { code: 'PROD010', name: 'Costilla de Cerdo', description: 'Costilla carnuda 1kg', price_buy: 14.00, price_sell: 24.00, stock: 25, min_stock: 5, category_id: 3 },
-    { code: 'PROD011', name: 'Lomo de Cerdo', description: 'Lomo limpio 1kg', price_buy: 16.00, price_sell: 26.00, stock: 18, min_stock: 5, category_id: 3 },
-    { code: 'PROD012', name: 'Pechuga de Pollo', description: 'Pechuga sin piel 1kg', price_buy: 9.00, price_sell: 15.50, stock: 30, min_stock: 10, category_id: 3 }
+    { code: 'PROD001', name: 'Mouse Inalámbrico', description: 'Mouse óptico ergonómico', price_buy: 15000, price_sell: 25000, stock: 50, min_stock: 10, category_id: 1 },
+    { code: 'PROD002', name: 'Teclado Mecánico', description: 'Teclado RGB switch blue', price_buy: 35000, price_sell: 60000, stock: 20, min_stock: 5, category_id: 1 },
+    { code: 'PROD003', name: 'Cuaderno Profesional', description: '100 hojas cuadriculado', price_buy: 2500, price_sell: 4500, stock: 100, min_stock: 20, category_id: 2 },
+    { code: 'PROD004', name: 'Monitor 24" IPS', description: 'Monitor Full HD 75Hz', price_buy: 120000, price_sell: 480000, stock: 10, min_stock: 3, category_id: 1 },
+    { code: 'PROD005', name: 'Resma Papel Bond', description: '500 hojas tamaño carta', price_buy: 12000, price_sell: 18000, stock: 40, min_stock: 10, category_id: 2 },
+    { code: 'PROD006', name: 'Detergente Líquido', description: 'Galón 3.7L fragancia limón', price_buy: 8000, price_sell: 14500, stock: 25, min_stock: 5, category_id: 3 },
+    { code: 'PROD007', name: 'Chorizo Henjur', description: 'Paquete x 5 unidades', price_buy: 10000, price_sell: 16000, stock: 30, min_stock: 5, category_id: 3 },
+    { code: 'PROD008', name: 'Carne de Res Premium', description: 'Corte fino 1kg', price_buy: 18000, price_sell: 28000, stock: 15, min_stock: 5, category_id: 3 },
+    { code: 'PROD009', name: 'Pollo Entero', description: 'Pollo fresco 2kg aprox', price_buy: 12000, price_sell: 22000, stock: 20, min_stock: 5, category_id: 3 },
+    { code: 'PROD010', name: 'Costilla de Cerdo', description: 'Costilla carnuda 1kg', price_buy: 14000, price_sell: 24000, stock: 25, min_stock: 5, category_id: 3 },
+    { code: 'PROD011', name: 'Lomo de Cerdo', description: 'Lomo limpio 1kg', price_buy: 16000, price_sell: 26000, stock: 18, min_stock: 5, category_id: 3 },
+    { code: 'PROD012', name: 'Pechuga de Pollo', description: 'Pechuga sin piel 1kg', price_buy: 9000, price_sell: 15500, stock: 30, min_stock: 10, category_id: 3 }
   ];
 
   for (const p of products) {
@@ -197,6 +197,9 @@ const seedData = async () => {
       await db.run(`INSERT INTO products (code, name, description, price_buy, price_sell, stock, min_stock, category_id) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
         [p.code, p.name, p.description, p.price_buy, p.price_sell, p.stock, p.min_stock, p.category_id]);
+    } else {
+      // Update prices for existing items if they are too low (meaning they were seeded with dollar values)
+      await db.run('UPDATE products SET price_buy = ?, price_sell = ? WHERE code = ? AND price_sell < 1000', [p.price_buy, p.price_sell, p.code]);
     }
   }
 

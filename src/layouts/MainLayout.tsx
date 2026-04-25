@@ -68,26 +68,16 @@ export const MainLayout: React.FC = () => {
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
-        <div className="p-4 flex items-center justify-between border-b border-slate-800">
-          <div className={cn("flex items-center gap-3 transition-all", isSidebarOpen ? "opacity-100" : "opacity-100 justify-center")}>
-            <img src="/favicon.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-            <div className={cn("font-bold text-white transition-opacity", !isSidebarOpen && "opacity-0 w-0 overflow-hidden")}>
-              <span className="text-brand-400">Henry</span> SAS
-            </div>
+        <div className="p-4 flex items-center justify-between border-b border-slate-800 h-16">
+          <div className={cn("font-black text-white text-xl tracking-tighter transition-opacity", !isSidebarOpen && "opacity-0 w-0 overflow-hidden")}>
+            <span className="text-brand-500">INV</span>HENRY
           </div>
-          {isSidebarOpen && (
-            <button onClick={toggleSidebar} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white">
-              <X size={20} />
-            </button>
-          )}
-          {!isSidebarOpen && (
-            <button onClick={toggleSidebar} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white flex justify-center w-full">
-               <Menu size={20} />
-            </button>
-          )}
+          <button onClick={toggleSidebar} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -95,19 +85,22 @@ export const MainLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center p-3 rounded-xl transition-all duration-200 group",
+                  "flex items-center h-12 px-4 rounded-2xl transition-all duration-300 group relative",
                   isActive 
-                    ? "bg-brand-600 text-white shadow-lg shadow-brand-900/20" 
-                    : "hover:bg-slate-800 hover:text-white"
+                    ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30 font-bold" 
+                    : "hover:bg-white/5 text-slate-400 hover:text-white"
                 )}
               >
-                <item.icon size={20} className={cn(isActive ? "text-white" : "text-slate-400 group-hover:text-brand-400")} />
+                <item.icon size={22} className={cn("transition-transform duration-300 group-hover:scale-110", isActive ? "text-white" : "text-slate-500 group-hover:text-brand-400")} />
                 <span className={cn(
-                  "ml-3 transition-opacity duration-300",
-                  !isSidebarOpen && "opacity-0 w-0 overflow-hidden"
+                  "ml-4 transition-all duration-300 text-sm tracking-wide",
+                  !isSidebarOpen && "opacity-0 w-0 overflow-hidden ml-0"
                 )}>
                   {item.label}
                 </span>
+                {isActive && isSidebarOpen && (
+                  <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white/50" />
+                )}
               </Link>
             );
           })}

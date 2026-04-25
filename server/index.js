@@ -199,6 +199,16 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
   }
 });
 
+app.put('/api/categories/:id', authenticateToken, async (req, res) => {
+  const { name, description } = req.body;
+  try {
+    await db.run('UPDATE categories SET name = ?, description = ? WHERE id = ?', [name, description, req.params.id]);
+    res.json({ id: req.params.id, ...req.body });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar categoría' });
+  }
+});
+
 // Sales
 app.get('/api/sales', authenticateToken, async (req, res) => {
   try {
