@@ -3,6 +3,7 @@ import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, Printe
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
+import { formatCurrency } from '../utils/currency';
 
 interface Product {
   id: number;
@@ -92,8 +93,8 @@ export const SalesPage: React.FC = () => {
       <div style="margin-bottom: 5px;">
         <div style="text-transform: uppercase;">${item.name}</div>
         <div style="display: flex; justify-content: space-between;">
-          <span>${item.quantity} unit x $${item.price_sell.toLocaleString()}</span>
-          <span>$${(item.price_sell * item.quantity).toLocaleString()}</span>
+          <span>${item.quantity} unit x ${formatCurrency(item.price_sell)}</span>
+          <span>${formatCurrency(item.price_sell * item.quantity)}</span>
         </div>
       </div>
     `).join('');
@@ -145,11 +146,11 @@ export const SalesPage: React.FC = () => {
           <div class="border-dashed"></div>
           <div class="flex-between">
             <span>Subtotal:</span>
-            <span>$${sale.total.toLocaleString()}</span>
+            <span>${formatCurrency(sale.total)}</span>
           </div>
           <div class="flex-between font-bold" style="font-size: 1.2em; margin-top: 5px;">
             <span>TOTAL A PAGAR:</span>
-            <span>$${sale.total.toLocaleString()}</span>
+            <span>${formatCurrency(sale.total)}</span>
           </div>
 
           <div class="border-dashed"></div>
@@ -159,11 +160,11 @@ export const SalesPage: React.FC = () => {
           </div>
           <div class="flex-between">
             <span>Recibido:</span>
-            <span>$${sale.cash_received?.toLocaleString()}</span>
+            <span>${sale.cash_received ? formatCurrency(sale.cash_received) : formatCurrency(0)}</span>
           </div>
           <div class="flex-between">
             <span>Cambio:</span>
-            <span>$${(sale.change || 0).toLocaleString()}</span>
+            <span>${formatCurrency(sale.change || 0)}</span>
           </div>
 
           <div class="text-center" style="margin-top: 30px;">
@@ -195,7 +196,7 @@ export const SalesPage: React.FC = () => {
       title: 'Confirmar Venta',
       html: `
         <div class="text-left space-y-2">
-          <p>Total a cobrar: <b>$${total.toLocaleString()}</b></p>
+          <p>Total a cobrar: <b>${formatCurrency(total)}</b></p>
           <div class="form-control">
             <label class="label"><span class="label-text">Efectivo Recibido</span></label>
             <input type="number" id="swal-cash" class="input input-bordered w-full" value="${cashReceived || total}">
@@ -290,7 +291,7 @@ export const SalesPage: React.FC = () => {
                 <div className="font-bold text-slate-800 line-clamp-1">{product.name}</div>
                 <div className="text-xs text-slate-500 mb-2">Stock: {product.stock}</div>
                 <div className="mt-auto flex justify-between items-center w-full">
-                  <span className="text-brand-600 font-bold">${product.price_sell.toLocaleString()}</span>
+                  <span className="text-brand-600 font-bold">{formatCurrency(product.price_sell)}</span>
                   <div className="p-2 bg-slate-100 group-hover:bg-brand-500 group-hover:text-white rounded-xl transition-colors">
                     <Plus size={16} />
                   </div>
@@ -326,7 +327,7 @@ export const SalesPage: React.FC = () => {
                   <span className="px-3 font-bold text-sm">{item.quantity}</span>
                   <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:text-brand-600"><Plus size={14} /></button>
                 </div>
-                <span className="font-bold text-slate-700">${(item.price_sell * item.quantity).toLocaleString()}</span>
+                <span className="font-bold text-slate-700">{formatCurrency(item.price_sell * item.quantity)}</span>
               </div>
             </div>
           ))}
@@ -345,7 +346,7 @@ export const SalesPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex justify-between text-2xl font-black text-slate-900">
               <span>Total</span>
-              <span>${total.toLocaleString()}</span>
+              <span>{formatCurrency(total)}</span>
             </div>
           </div>
 

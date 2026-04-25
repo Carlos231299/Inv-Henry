@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Package, Users, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrency } from '../utils/currency';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -72,10 +73,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Ventas Totales" value={`$${stats.totalSales.toFixed(2)}`} icon={ShoppingCart} trend="up" trendValue="12" />
+        <StatCard title="Ventas Totales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
         <StatCard title="Productos en Stock" value={stats.totalProducts.toString()} icon={Package} />
         <StatCard title="Nuevos Clientes" value={stats.totalCustomers.toString()} icon={Users} trend="up" trendValue="8" />
-        <StatCard title="Ingresos Estimados" value={`$${stats.netIncome.toFixed(2)}`} icon={TrendingUp} trend="up" trendValue="5" />
+        <StatCard title="Ingresos Estimados" value={formatCurrency(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -94,7 +95,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-brand-600">+${sale.total.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-brand-600">+{formatCurrency(sale.total)}</p>
                   <p className="text-xs text-slate-400 capitalize">{sale.payment_method}</p>
                 </div>
               </div>

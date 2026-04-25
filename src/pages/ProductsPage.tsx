@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Search, Package, Barcode } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
+import { formatCurrency } from '../utils/currency';
 
 interface Product {
   id: number;
@@ -177,7 +178,7 @@ export const ProductsPage: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td className="font-semibold text-brand-600">${p.price_sell.toFixed(2)}</td>
+                  <td className="font-semibold text-brand-600">{formatCurrency(p.price_sell)}</td>
                   <td className="text-right space-x-1">
                     <button 
                       onClick={() => {

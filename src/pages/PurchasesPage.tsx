@@ -3,6 +3,7 @@ import { Plus, Search, Truck, Calendar, DollarSign, Package, Trash2, Minus, Shop
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
+import { formatCurrency } from '../utils/currency';
 
 interface Product {
   id: number;
@@ -160,7 +161,7 @@ export const PurchasesPage: React.FC = () => {
                       </div>
                     </td>
                     <td>{new Date(p.date).toLocaleDateString()}</td>
-                    <td className="font-semibold text-slate-700">${p.total.toFixed(2)}</td>
+                    <td className="font-semibold text-slate-700">{formatCurrency(p.total)}</td>
                     <td className="text-right">
                       <button className="btn btn-ghost btn-sm text-brand-600 rounded-lg">Detalles</button>
                     </td>
@@ -217,7 +218,7 @@ export const PurchasesPage: React.FC = () => {
                         className="flex flex-col p-3 rounded-xl border border-slate-100 hover:bg-slate-50 text-left transition-colors"
                       >
                         <span className="font-bold text-sm text-slate-800">{p.name}</span>
-                        <span className="text-xs text-slate-500">Costo: ${p.price_buy}</span>
+                        <span className="text-xs text-slate-500">Costo: {formatCurrency(p.price_buy)}</span>
                       </button>
                     ))}
                   </div>
@@ -245,7 +246,7 @@ export const PurchasesPage: React.FC = () => {
                           <span className="text-xs font-bold">{item.quantity}</span>
                           <button onClick={() => updateQuantity(item.id, 1)} className="btn btn-xs btn-circle btn-ghost"><Plus size={12} /></button>
                         </div>
-                        <span className="text-xs font-bold text-slate-600">${(item.price_buy * item.quantity).toFixed(2)}</span>
+                        <span className="text-xs font-bold text-slate-600">{formatCurrency(item.price_buy * item.quantity)}</span>
                       </div>
                     </div>
                   ))}
@@ -257,7 +258,7 @@ export const PurchasesPage: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
                   <div className="flex justify-between font-black text-lg">
                     <span>Total:</span>
-                    <span className="text-brand-600">${total.toFixed(2)}</span>
+                    <span className="text-brand-600">{formatCurrency(total)}</span>
                   </div>
                   <button 
                     onClick={handleSavePurchase}

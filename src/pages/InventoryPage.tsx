@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, AlertTriangle, ArrowDown } from 'lucide-react';
 import api from '../services/api';
+import { formatCurrency } from '../utils/currency';
 
 export const InventoryPage: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -25,7 +26,7 @@ export const InventoryPage: React.FC = () => {
             <Package size={24} />
           </div>
           <p className="text-slate-500 text-sm">Valor Total Inventario</p>
-          <h3 className="text-2xl font-bold text-slate-800">${totalValue.toFixed(2)}</h3>
+          <h3 className="text-2xl font-bold text-slate-800">{formatCurrency(totalValue)}</h3>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl w-fit mb-4">
