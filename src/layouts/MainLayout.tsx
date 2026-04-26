@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../context/AuthContext';
+import { useConfig } from '../context/ConfigContext';
+import { NotificationBell } from '../components/NotificationBell';
 import Swal from 'sweetalert2';
 
 const menuItems = [
@@ -33,6 +35,7 @@ const menuItems = [
 export const MainLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { user, logout } = useAuth();
+  const { settings } = useConfig();
   const location = useLocation();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -72,7 +75,7 @@ export const MainLayout: React.FC = () => {
           <div className={cn("flex items-center gap-3 transition-all", isSidebarOpen ? "opacity-100" : "opacity-100 justify-center")}>
             <img src="/favicon.png" alt="Logo" className="w-8 h-8 rounded-lg" />
             <div className={cn("font-bold text-white transition-opacity", !isSidebarOpen && "opacity-0 w-0 overflow-hidden")}>
-              <span className="text-brand-400">Henry</span> SAS
+              {settings.business_name}
             </div>
           </div>
           {isSidebarOpen && (
@@ -136,13 +139,17 @@ export const MainLayout: React.FC = () => {
           <h1 className="text-xl font-semibold text-slate-800">
             {menuItems.find(i => i.path === location.pathname)?.label || 'Sistema'}
           </h1>
-          <div className="flex items-center space-x-4">
-            <div className="text-right mr-2 hidden sm:block">
-              <p className="text-sm font-medium text-slate-900">{user?.name || 'Usuario'}</p>
-              <p className="text-xs text-slate-500 capitalize">{user?.role || 'Vendedor'}</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold border border-brand-200">
-              {user?.name?.charAt(0) || 'U'}
+          <div className="flex items-center space-x-6">
+            <NotificationBell />
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-right mr-2 hidden sm:block">
+                <p className="text-sm font-medium text-slate-900">{user?.name || 'Usuario'}</p>
+                <p className="text-xs text-slate-500 capitalize">{user?.role || 'Vendedor'}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold border border-brand-200">
+                {user?.name?.charAt(0) || 'U'}
+              </div>
             </div>
           </div>
         </header>

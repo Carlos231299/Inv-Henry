@@ -10,8 +10,10 @@ import { InventoryPage } from './pages/InventoryPage';
 import { SuppliersPage } from './pages/SuppliersPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { PurchasesPage } from './pages/PurchasesPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ConfigProvider } from './context/ConfigContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token, isLoading } = useAuth();
@@ -47,7 +49,7 @@ function AppRoutes() {
         <Route path="clientes" element={<CustomersPage />} />
         <Route path="ventas" element={<SalesPage />} />
         <Route path="compras" element={<PurchasesPage />} />
-        <Route path="reportes" element={<InventoryPage />} />
+        <Route path="reportes" element={<ReportsPage />} />
         <Route path="configuracion" element={<SettingsPage />} />
       </Route>
 
@@ -59,10 +61,12 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Toaster position="top-right" expand={true} richColors />
-        <AppRoutes />
-      </AuthProvider>
+      <ConfigProvider>
+        <AuthProvider>
+          <Toaster position="top-right" expand={true} richColors />
+          <AppRoutes />
+        </AuthProvider>
+      </ConfigProvider>
     </Router>
   );
 }

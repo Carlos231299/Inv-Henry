@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Package, Users, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -24,6 +24,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { format } = useCurrency();
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProducts: 0,
@@ -80,10 +81,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Ventas Totales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
+        <StatCard title="Ventas Totales" value={format(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
         <StatCard title="Productos en Stock" value={stats.totalProducts.toLocaleString()} icon={Package} />
         <StatCard title="Nuevos Clientes" value={stats.totalCustomers.toString()} icon={Users} trend="up" trendValue="8" />
-        <StatCard title="Ingresos Estimados" value={formatCurrency(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
+        <StatCard title="Ingresos Estimados" value={format(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -185,7 +186,7 @@ export const Dashboard: React.FC = () => {
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</p>
-                  <p className="text-lg font-black text-brand-600">{formatCurrency(sale.total)}</p>
+                  <p className="text-lg font-black text-brand-600">{format(sale.total)}</p>
                 </div>
                 <div className="px-2 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 capitalize">
                   {sale.payment_method}

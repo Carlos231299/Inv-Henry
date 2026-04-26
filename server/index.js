@@ -215,6 +215,31 @@ app.get('/api/sales', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/sales/:id', authenticateToken, async (req, res) => {
+  try {
+    const sale = await db.get(`
+      SELECT s.*, c.name as customer_name, u.name as user_name
+      FROM sales s
+      LEFT JOIN customers c ON s.customer_id = c.id
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.id = ?
+    `, req.params.id);
+
+    if (!sale) return res.status(404).json({ message: 'Venta no encontrada' });
+
+    const items = await db.all(`
+      SELECT si.*, p.name
+      FROM sale_items si
+      JOIN products p ON si.product_id = p.id
+      WHERE si.sale_id = ?
+    `, req.params.id);
+
+    res.json({ ...sale, items });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener detalles de la venta' });
+  }
+});
+
 app.post('/api/sales', authenticateToken, async (req, res) => {
   const { items, total, payment_method, customer_id } = req.body;
   const user_id = req.user.id;
@@ -261,6 +286,31 @@ app.get('/api/purchases', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/purchases/:id', authenticateToken, async (req, res) => {
+  try {
+    const purchase = await db.get(`
+      SELECT p.*, s.name as supplier_name, u.name as user_name
+      FROM purchases p
+      LEFT JOIN suppliers s ON p.supplier_id = s.id
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE p.id = ?
+    `, req.params.id);
+
+    if (!purchase) return res.status(404).json({ message: 'Compra no encontrada' });
+
+    const items = await db.all(`
+      SELECT pi.*, pr.name
+      FROM purchase_items pi
+      JOIN products pr ON pi.product_id = pr.id
+      WHERE pi.purchase_id = ?
+    `, req.params.id);
+
+    res.json({ ...purchase, items });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener detalles de la compra' });
+  }
+});
+
 app.post('/api/purchases', authenticateToken, async (req, res) => {
   const { items, total, supplier_id } = req.body;
   const user_id = req.user.id;
@@ -287,6 +337,30 @@ app.post('/api/purchases', authenticateToken, async (req, res) => {
     res.json({ id: purchaseId, message: 'Compra registrada con éxito' });
   } catch (error) {
     res.status(500).json({ message: 'Error al registrar la compra' });
+  }
+});
+
+// Settings Routes
+app.get('/api/settings', async (req, res) => {
+  try {
+    const settings = await db.all('SELECT * FROM settings');
+    const settingsMap = {};
+    settings.forEach(s => settingsMap[s.key] = s.value);
+    res.json(settingsMap);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener configuraciones' });
+  }
+});
+
+app.post('/api/settings', authenticateToken, async (req, res) => {
+  const settings = req.body;
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value.toString()]);
+    }
+    res.json({ message: 'Configuraciones actualizadas' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar configuraciones' });
   }
 });
 

@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Search, Package, Barcode, TrendingUp } from 'lucid
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
-import { formatCurrency } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface Product {
   id: number;
@@ -24,6 +24,7 @@ interface Category {
 }
 
 export const ProductsPage: React.FC = () => {
+  const { format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,7 +147,7 @@ export const ProductsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Valor Inventario</p>
-              <h3 className="text-2xl font-black text-slate-800">{formatCurrency(totalValue)}</h3>
+              <h3 className="text-2xl font-black text-slate-800">{format(totalValue)}</h3>
             </div>
           </div>
         </div>
@@ -217,7 +218,7 @@ export const ProductsPage: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td className="font-semibold text-brand-600">{formatCurrency(p.price_sell)}</td>
+                  <td className="font-semibold text-brand-600">{format(p.price_sell)}</td>
                   <td className="text-right space-x-1">
                     <button 
                       onClick={() => {

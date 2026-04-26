@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Truck, Trash2, Minus, ShoppingCart, DollarSign } from 'lucide-react';
+import { Plus, Search, Truck, Trash2, Minus, ShoppingCart, DollarSign, Eye, Calendar, User } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
-// import Swal from 'sweetalert2';
-import { formatCurrency } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface Product {
   id: number;
@@ -27,16 +26,21 @@ interface Purchase {
   supplier_name: string;
   total: number;
   date: string;
+  user_name?: string;
 }
 
 export const PurchasesPage: React.FC = () => {
+  const { format } = useCurrency();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
   const [cart, setCart] = useState<PurchaseItem[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [purchaseSearch, setPurchaseSearch] = useState('');
 
   const fetchData = async () => {
     try {
@@ -110,9 +114,23 @@ export const PurchasesPage: React.FC = () => {
     }
   };
 
+  const handleViewDetails = async (id: number) => {
+    try {
+      const res = await api.get(`/purchases/${id}`);
+      setSelectedPurchase(res.data);
+      setIsDetailsOpen(true);
+    } catch (error) {
+      toast.error('Error al cargar detalles');
+    }
+  };
+
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredPurchases = purchases.filter(p => 
+    p.supplier_name.toLowerCase().includes(purchaseSearch.toLowerCase())
   );
 
   const totalInvestment = purchases.reduce((acc, p) => acc + p.total, 0);
@@ -140,7 +158,7 @@ export const PurchasesPage: React.FC = () => {
           </div>
           <div>
             <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Inversión Total</p>
-            <h3 className="text-3xl font-black text-slate-800">{formatCurrency(totalInvestment)}</h3>
+            <h3 className="text-3xl font-black text-slate-800">{format(totalInvestment)}</h3>
           </div>
         </div>
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
@@ -154,7 +172,19 @@ export const PurchasesPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por proveedor..."
+              className="input input-bordered w-full pl-12 rounded-xl"
+              value={purchaseSearch}
+              onChange={(e) => setPurchaseSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="table w-full">
             <thead>
@@ -166,14 +196,14 @@ export const PurchasesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {purchases.length === 0 ? (
+              {filteredPurchases.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-8 text-slate-400">
                     No hay compras registradas
                   </td>
                 </tr>
               ) : (
-                purchases.map((p) => (
+                filteredPurchases.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
                     <td>
                       <div className="flex items-center gap-3">
@@ -184,9 +214,14 @@ export const PurchasesPage: React.FC = () => {
                       </div>
                     </td>
                     <td>{new Date(p.date).toLocaleDateString()}</td>
-                    <td className="font-semibold text-slate-700">{formatCurrency(p.total)}</td>
+                    <td className="font-black text-brand-600">{format(p.total)}</td>
                     <td className="text-right">
-                      <button className="btn btn-ghost btn-sm text-brand-600 rounded-lg">Detalles</button>
+                      <button 
+                        onClick={() => handleViewDetails(p.id)}
+                        className="btn btn-ghost btn-sm text-brand-600 gap-2 rounded-xl"
+                      >
+                        <Eye size={16} /> Detalles
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -199,7 +234,7 @@ export const PurchasesPage: React.FC = () => {
       {/* Modal Compra */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden animate-in zoom-in duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden animate-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-800">Registrar Ingreso de Mercancía</h3>
               <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
@@ -238,10 +273,10 @@ export const PurchasesPage: React.FC = () => {
                       <button 
                         key={p.id}
                         onClick={() => addToCart(p)}
-                        className="flex flex-col p-3 rounded-xl border border-slate-100 hover:bg-slate-50 text-left transition-colors"
+                        className="flex flex-col p-3 rounded-xl border border-slate-100 hover:bg-brand-50 hover:border-brand-200 text-left transition-all"
                       >
                         <span className="font-bold text-sm text-slate-800">{p.name}</span>
-                        <span className="text-xs text-slate-500">Costo: {formatCurrency(p.price_buy)}</span>
+                        <span className="text-xs text-slate-500 font-bold">Costo: {format(p.price_buy)}</span>
                       </button>
                     ))}
                   </div>
@@ -251,7 +286,7 @@ export const PurchasesPage: React.FC = () => {
               {/* Cart */}
               <div className="w-full md:w-80 bg-slate-50/30 p-6 flex flex-col">
                 <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <ShoppingCart size={18} /> Resumen de Compra
+                  <ShoppingCart size={18} className="text-brand-600" /> Resumen
                 </h4>
                 
                 <div className="flex-1 overflow-y-auto space-y-3">
@@ -269,28 +304,78 @@ export const PurchasesPage: React.FC = () => {
                           <span className="text-xs font-bold">{item.quantity}</span>
                           <button onClick={() => updateQuantity(item.id, 1)} className="btn btn-xs btn-circle btn-ghost"><Plus size={12} /></button>
                         </div>
-                        <span className="text-xs font-bold text-slate-600">{formatCurrency(item.price_buy * item.quantity)}</span>
+                        <span className="text-xs font-bold text-slate-600">{format(item.price_buy * item.quantity)}</span>
                       </div>
                     </div>
                   ))}
                   {cart.length === 0 && (
-                    <div className="text-center py-8 text-slate-400 text-sm">Carrito vacío</div>
+                    <div className="text-center py-8 text-slate-400 text-sm italic">Carrito vacío</div>
                   )}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                  <div className="flex justify-between font-black text-lg">
+                  <div className="flex justify-between font-black text-xl">
                     <span>Total:</span>
-                    <span className="text-brand-600">{formatCurrency(total)}</span>
+                    <span className="text-brand-600">{format(total)}</span>
                   </div>
                   <button 
                     onClick={handleSavePurchase}
                     disabled={cart.length === 0 || !selectedSupplier}
-                    className="btn btn-primary w-full rounded-xl"
+                    className="btn btn-primary w-full h-14 rounded-2xl border-none shadow-xl shadow-brand-200 text-lg font-bold"
                   >
                     Guardar Compra
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detalles */}
+      {isDetailsOpen && selectedPurchase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">Detalles de la Compra</h3>
+              <button onClick={() => setIsDetailsOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
+                  <Calendar className="text-slate-400" size={20} />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Fecha</p>
+                    <p className="text-sm font-bold">{new Date(selectedPurchase.date).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
+                  <User className="text-slate-400" size={20} />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Proveedor</p>
+                    <p className="text-sm font-bold">{selectedPurchase.supplier_name}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Productos Comprados</p>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {selectedPurchase.items.map((item: any) => (
+                    <div key={item.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl">
+                      <div>
+                        <p className="font-bold text-slate-800">{item.name}</p>
+                        <p className="text-xs text-slate-500">{item.quantity} unidades x {format(item.price)}</p>
+                      </div>
+                      <p className="font-black text-slate-700">{format(item.price * item.quantity)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-xl font-black text-slate-800">Total Inversión</span>
+                <span className="text-2xl font-black text-brand-600">{format(selectedPurchase.total)}</span>
               </div>
             </div>
           </div>

@@ -132,6 +132,14 @@ export const initDB = async () => {
     )
   `);
 
+  // Settings Table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
   // Create default admin user if not exists
   const admin = await db.get('SELECT * FROM users WHERE username = ?', 'admin');
   if (!admin) {
@@ -197,6 +205,24 @@ const seedData = async () => {
       await db.run(`INSERT INTO products (code, name, description, price_buy, price_sell, stock, min_stock, category_id) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
         [p.code, p.name, p.description, p.price_buy, p.price_sell, p.stock, p.min_stock, p.category_id]);
+    }
+  }
+
+  const defaultSettings = [
+    { key: 'business_name', value: 'Henry SAS' },
+    { key: 'nit', value: '901.234.567-8' },
+    { key: 'currency', value: 'COP' },
+    { key: 'currency_locale', value: 'es-CO' },
+    { key: 'address', value: 'Calle 123 #45-67, Bogotá' },
+    { key: 'phone', value: '300 123 4567' },
+    { key: 'low_stock_alert', value: '5' },
+    { key: 'daily_summary_email', value: 'admin@henrysas.com' }
+  ];
+
+  for (const s of defaultSettings) {
+    const exists = await db.get('SELECT key FROM settings WHERE key = ?', s.key);
+    if (!exists) {
+      await db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [s.key, s.value]);
     }
   }
 
