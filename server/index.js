@@ -189,6 +189,15 @@ app.post('/api/products', authenticateToken, async (req, res) => {
   }
 });
 
+app.delete('/api/products/:id', authenticateToken, async (req, res) => {
+  try {
+    await db.run('DELETE FROM products WHERE id = ?', req.params.id);
+    res.json({ message: 'Producto eliminado correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al eliminar producto' });
+  }
+});
+
 app.post('/api/categories', authenticateToken, async (req, res) => {
   const { name, description } = req.body;
   try {
