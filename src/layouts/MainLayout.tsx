@@ -81,7 +81,7 @@ export const MainLayout: React.FC = () => {
       >
         <div className="p-4 flex items-center justify-between border-b border-slate-800">
           <div className={cn("flex items-center gap-3 transition-all", isSidebarOpen ? "opacity-100" : "opacity-100 justify-center")}>
-            <img src="/favicon.png" alt="Logo" className="w-8 h-8 rounded-lg" />
+            <img src="/logo.jpg" alt="Logo" className="w-10 h-10 rounded-xl object-cover shadow-sm ring-2 ring-white/10" />
             <div className={cn("font-bold text-white transition-opacity", !isSidebarOpen && "opacity-0 w-0 overflow-hidden")}>
               {settings.business_name}
             </div>

@@ -187,6 +187,83 @@ export const PurchasesPage: React.FC = () => {
     }
   };
 
+  const printPurchaseReceipt = (purchase: any) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const itemsHtml = purchase.items.map((item: any) => `
+      <div style="margin-bottom: 5px;">
+        <div style="text-transform: uppercase; font-weight: bold;">${item.name}</div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>${item.quantity} x ${format(item.price)}</span>
+          <span>${format(item.price * item.quantity)}</span>
+        </div>
+      </div>
+    `).join('');
+
+    const html = `
+      <html>
+        <head>
+          <style>
+            @page { margin: 0; size: 80mm auto; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              font-size: 10pt; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm;
+              color: black;
+            }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            .border-dashed { border-top: 1px dashed black; margin: 10px 0; }
+            .flex-between { display: flex; justify-content: space-between; }
+            .uppercase { text-transform: uppercase; }
+            .logo { width: 40mm; height: auto; margin: 0 auto 5px; display: block; border-radius: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="text-center">
+            <img src="/logo.jpg" class="logo" />
+            <h2 class="uppercase" style="margin: 0;">INGRESO DE MERCANCÍA</h2>
+            <p style="margin: 2px 0;">ID COMPRA: #${purchase.id}</p>
+          </div>
+          <div class="border-dashed"></div>
+          <p style="margin: 5px 0;">Fecha: ${new Date(purchase.date).toLocaleString('es-CO')}</p>
+          <p style="margin: 5px 0;">Proveedor: ${purchase.supplier_name}</p>
+          <p style="margin: 5px 0;">Registrado por: ${purchase.user_name || 'Admin'}</p>
+          <div class="border-dashed"></div>
+          <div class="flex-between font-bold">
+            <span>Descripción</span>
+            <span>Total</span>
+          </div>
+          <div style="margin-top: 5px;">${itemsHtml}</div>
+          <div class="border-dashed"></div>
+          <div class="flex-between font-bold" style="font-size: 1.2em;">
+            <span>TOTAL COSTO:</span>
+            <span>${format(purchase.total)}</span>
+          </div>
+          <div class="border-dashed"></div>
+          <div class="text-center" style="margin-top: 20px;">
+            <p class="font-bold uppercase">${purchase.status === 'voided' ? '*** COMPRA ANULADA ***' : 'REGISTRO DE INVENTARIO'}</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.write(html);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 2000);
+      }, 100);
+    }
+  };
+
   const handleViewDetails = async (id: number) => {
     try {
       const res = await api.get(`/purchases/${id}`);
@@ -194,6 +271,20 @@ export const PurchasesPage: React.FC = () => {
       setIsDetailsOpen(true);
     } catch (error) {
       toast.error('Error al cargar detalles');
+    }
+  };
+
+  const handleUpdatePurchase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/purchases/${selectedPurchase.id}`, {
+        supplier_id: selectedPurchase.supplier_id
+      });
+      toast.success('Compra actualizada');
+      fetchData();
+      setIsDetailsOpen(false);
+    } catch (error) {
+      toast.error('Error al actualizar');
     }
   };
 
@@ -455,46 +546,91 @@ export const PurchasesPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl animate-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Detalles de la Compra</h3>
-              <button onClick={() => setIsDetailsOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Detalles de la Compra</h3>
+                <p className="text-xs text-slate-500 font-medium">#{selectedPurchase.id} - {selectedPurchase.status === 'voided' ? 'Anulada' : 'Completada'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => printPurchaseReceipt(selectedPurchase)}
+                  className="btn btn-ghost btn-sm text-brand-600 gap-2 rounded-xl"
+                >
+                  <ShoppingCart size={16} /> Imprimir
+                </button>
+                <button onClick={() => setIsDetailsOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+              </div>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
-                  <Calendar className="text-slate-400" size={20} />
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Fecha</p>
-                    <p className="text-sm font-bold">{new Date(selectedPurchase.date).toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
-                  <User className="text-slate-400" size={20} />
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Proveedor</p>
-                    <p className="text-sm font-bold">{selectedPurchase.supplier_name}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Productos Comprados</p>
-                <div className="max-h-60 overflow-y-auto space-y-2">
-                  {selectedPurchase.items.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl">
-                      <div>
-                        <p className="font-bold text-slate-800">{item.name}</p>
-                        <p className="text-xs text-slate-500">{item.quantity} unidades x {format(item.price)}</p>
-                      </div>
-                      <p className="font-black text-slate-700">{format(item.price * item.quantity)}</p>
+              <form onSubmit={handleUpdatePurchase} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
+                    <Calendar className="text-slate-400" size={20} />
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Fecha</p>
+                      <p className="text-sm font-bold">{new Date(selectedPurchase.date).toLocaleString()}</p>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 focus-within:border-brand-300 transition-all">
+                    <User className="text-slate-400" size={20} />
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Proveedor (Editable)</p>
+                      <select 
+                        className="w-full bg-transparent border-none p-0 text-sm font-bold focus:ring-0 outline-none"
+                        value={selectedPurchase.supplier_id}
+                        onChange={(e) => setSelectedPurchase({...selectedPurchase, supplier_id: parseInt(e.target.value)})}
+                        disabled={selectedPurchase.status === 'voided'}
+                      >
+                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                <span className="text-xl font-black text-slate-800">Total Inversión</span>
-                <span className="text-2xl font-black text-brand-600">{format(selectedPurchase.total)}</span>
-              </div>
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Productos Comprados</p>
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                    {selectedPurchase.items.map((item: any) => (
+                      <div key={item.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl group hover:border-brand-100 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                            <Plus size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{item.name}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase">{item.quantity} unidades x {format(item.price)}</p>
+                          </div>
+                        </div>
+                        <p className="font-black text-brand-600">{format(item.price * item.quantity)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inversión Total</p>
+                    <span className="text-3xl font-black text-slate-800">{format(selectedPurchase.total)}</span>
+                  </div>
+                  
+                  {selectedPurchase.status !== 'voided' && (
+                    <div className="flex gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => handleVoidPurchase(selectedPurchase)}
+                        className="btn btn-ghost text-red-500 font-bold px-6 h-12 rounded-xl hover:bg-red-50"
+                      >
+                        Anular
+                      </button>
+                      <button 
+                        type="submit"
+                        className="btn btn-primary bg-brand-600 text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-brand-100 border-none uppercase tracking-widest text-xs"
+                      >
+                        Guardar Cambios
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </form>
             </div>
           </div>
         </div>

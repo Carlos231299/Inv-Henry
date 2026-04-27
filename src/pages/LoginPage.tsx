@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
           <div className="p-8">
             <div className="flex flex-col items-center mb-8">
               <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-4 shadow-xl border border-slate-100 p-2">
-                <img src="/favicon.png" alt={`Logo ${settings.business_name}`} className="w-full h-full object-contain" />
+                <img src="/logo.jpg" alt={`Logo ${settings.business_name}`} className="w-full h-full object-contain rounded-2xl" />
               </div>
               <h1 className="text-2xl font-bold text-slate-800 text-center">Bienvenido de nuevo</h1>
               <p className="text-slate-500 text-center mt-2">Ingresa tus credenciales para acceder</p>

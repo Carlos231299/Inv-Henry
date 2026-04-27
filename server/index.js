@@ -300,6 +300,52 @@ app.post('/api/sales', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/sales/:id/void', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run('BEGIN TRANSACTION');
+
+    const sale = await db.get('SELECT status FROM sales WHERE id = ?', [id]);
+    if (!sale) {
+      await db.run('ROLLBACK');
+      return res.status(404).json({ message: 'Venta no encontrada' });
+    }
+    if (sale.status === 'voided') {
+      await db.run('ROLLBACK');
+      return res.status(400).json({ message: 'Esta venta ya ha sido anulada' });
+    }
+
+    const items = await db.all('SELECT product_id, quantity FROM sale_items WHERE sale_id = ?', [id]);
+
+    // Revert stock (add back what was sold)
+    for (const item of items) {
+      await db.run('UPDATE products SET stock = stock + ? WHERE id = ?', [item.quantity, item.product_id]);
+    }
+
+    // Update status
+    await db.run("UPDATE sales SET status = 'voided' WHERE id = ?", [id]);
+
+    await db.run('COMMIT');
+    res.json({ message: 'Venta anulada con éxito' });
+  } catch (error) {
+    await db.run('ROLLBACK');
+    res.status(500).json({ message: 'Error al anular la venta' });
+  }
+});
+
+app.put('/api/sales/:id', authenticateToken, async (req, res) => {
+  const { customer_id, payment_method } = req.body;
+  try {
+    await db.run(`
+      UPDATE sales SET customer_id = ?, payment_method = ?
+      WHERE id = ?
+    `, [customer_id, payment_method, req.params.id]);
+    res.json({ message: 'Venta actualizada correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar venta' });
+  }
+});
+
 // Purchases
 app.get('/api/purchases', authenticateToken, async (req, res) => {
   try {
@@ -385,6 +431,19 @@ app.post('/api/purchases', authenticateToken, async (req, res) => {
     res.json({ id: purchaseId, message: 'Compra registrada con éxito' });
   } catch (error) {
     res.status(500).json({ message: 'Error al registrar la compra' });
+  }
+});
+
+app.put('/api/purchases/:id', authenticateToken, async (req, res) => {
+  const { supplier_id } = req.body;
+  try {
+    await db.run(`
+      UPDATE purchases SET supplier_id = ?
+      WHERE id = ?
+    `, [supplier_id, req.params.id]);
+    res.json({ message: 'Compra actualizada correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar compra' });
   }
 });
 

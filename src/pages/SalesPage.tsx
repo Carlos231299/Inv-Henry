@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, Eye } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, Eye, Calendar, User, Printer } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
@@ -45,7 +45,8 @@ export const SalesPage: React.FC = () => {
   const [posSearchTerm, setPosSearchTerm] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [cashReceived, setCashReceived] = useState<string>('');
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<any>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
@@ -159,7 +160,7 @@ export const SalesPage: React.FC = () => {
           </style>
         </head>
         <body>
-          <div class="text-center">
+            <img src="/logo.jpg" class="logo" style="width: 40mm; height: auto; margin: 0 auto 5px; display: block; border-radius: 5px;" />
             <h2 class="uppercase" style="margin: 0;">${globalSettings.business_name}</h2>
             <p style="margin: 2px 0;">NIT: ${globalSettings.nit}</p>
             <p style="margin: 2px 0;">${globalSettings.address}</p>
@@ -313,12 +314,52 @@ export const SalesPage: React.FC = () => {
     }
   };
 
-  const handleReprint = async (saleId: number) => {
+  const handleViewDetails = async (saleId: number) => {
     try {
       const res = await api.get(`/sales/${saleId}`);
-      printReceipt(res.data);
+      setSelectedSale(res.data);
+      setIsDetailsOpen(true);
     } catch (error) {
       toast.error('Error al recuperar detalles de la venta');
+    }
+  };
+
+  const handleVoidSale = async (sale: any) => {
+    const result = await Swal.fire({
+      title: '¿Anular esta venta?',
+      text: `Esta acción devolverá los productos al stock y marcará la factura #${sale.invoice_number} como ANULADA.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Sí, anular venta',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post(`/sales/${sale.id}/void`);
+      toast.success('Venta anulada correctamente');
+      fetchData();
+      setIsDetailsOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al anular venta');
+    }
+  };
+
+  const handleUpdateSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/sales/${selectedSale.id}`, {
+        customer_id: selectedSale.customer_id,
+        payment_method: selectedSale.payment_method
+      });
+      toast.success('Venta actualizada');
+      fetchData();
+      setIsDetailsOpen(false);
+    } catch (error) {
+      toast.error('Error al actualizar');
     }
   };
 
@@ -381,13 +422,20 @@ export const SalesPage: React.FC = () => {
               <tbody>
                 {filteredSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
-                    <td className="font-bold text-brand-600">#{sale.invoice_number}</td>
+                    <td>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-brand-600">#{sale.invoice_number}</span>
+                        {sale.status === 'voided' && (
+                          <span className="text-[9px] font-black text-red-500 uppercase tracking-tighter">ANULADA</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="font-medium text-slate-700">{sale.customer_name || 'Consumidor Final'}</td>
                     <td className="text-slate-500 text-sm">{new Date(sale.date).toLocaleString()}</td>
-                    <td className="font-black text-slate-800">{format(sale.total)}</td>
+                    <td className={`font-black ${sale.status === 'voided' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{format(sale.total)}</td>
                     <td className="text-right">
-                      <button onClick={() => handleReprint(sale.id)} className="btn btn-ghost btn-sm text-brand-600 rounded-xl">
-                        <Eye size={18} />
+                      <button onClick={() => handleViewDetails(sale.id)} className="btn btn-ghost btn-sm text-brand-600 rounded-xl gap-2">
+                        <Eye size={18} /> Ver
                       </button>
                     </td>
                   </tr>
@@ -562,6 +610,117 @@ export const SalesPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Modal Detalles de Venta */}
+      {isDetailsOpen && selectedSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Factura #{selectedSale.invoice_number}</h3>
+                <p className="text-xs text-slate-500 font-medium">{selectedSale.status === 'voided' ? 'Esta venta fue anulada' : 'Venta completada'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => printReceipt(selectedSale)}
+                  className="btn btn-ghost btn-sm text-brand-600 gap-2 rounded-xl"
+                >
+                  <Printer size={16} /> Imprimir
+                </button>
+                <button onClick={() => setIsDetailsOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+              </div>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleUpdateSale} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
+                    <Calendar className="text-slate-400" size={20} />
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Fecha y Hora</p>
+                      <p className="text-sm font-bold">{new Date(selectedSale.date).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 focus-within:border-brand-300 transition-all">
+                    <User className="text-slate-400" size={20} />
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Cliente (Editable)</p>
+                      <select 
+                        className="w-full bg-transparent border-none p-0 text-sm font-bold focus:ring-0 outline-none"
+                        value={selectedSale.customer_id || ''}
+                        onChange={(e) => setSelectedSale({...selectedSale, customer_id: e.target.value ? parseInt(e.target.value) : null})}
+                        disabled={selectedSale.status === 'voided'}
+                      >
+                        <option value="">Consumidor Final</option>
+                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Productos Vendidos</p>
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                    {selectedSale.items.map((item: any) => (
+                      <div key={item.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl group hover:border-brand-100 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center text-brand-600">
+                            <ShoppingCart size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{item.name}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase">{item.quantity} unidades x {format(item.price)}</p>
+                          </div>
+                        </div>
+                        <p className="font-black text-brand-600">{format(item.price * item.quantity)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div className="flex gap-8">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
+                      <span className="text-3xl font-black text-slate-800">{format(selectedSale.total)}</span>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Método</p>
+                      <select 
+                        className="bg-slate-100 rounded-lg px-2 py-1 text-xs font-bold border-none outline-none"
+                        value={selectedSale.payment_method}
+                        onChange={(e) => setSelectedSale({...selectedSale, payment_method: e.target.value})}
+                        disabled={selectedSale.status === 'voided'}
+                      >
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Transferencia</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {selectedSale.status !== 'voided' && (
+                    <div className="flex gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => handleVoidSale(selectedSale)}
+                        className="btn btn-ghost text-red-500 font-bold px-6 h-12 rounded-xl hover:bg-red-50"
+                      >
+                        Anular Factura
+                      </button>
+                      <button 
+                        type="submit"
+                        className="btn btn-primary bg-brand-600 text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-brand-100 border-none uppercase tracking-widest text-xs"
+                      >
+                        Guardar Cambios
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
