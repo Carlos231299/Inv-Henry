@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Package, Users, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency } from '../utils/currency';
-import { cn } from '../utils/cn';
+import { useCurrency } from '../hooks/useCurrency';
+import { useConfig } from '../context/ConfigContext';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -25,8 +25,8 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [filter, setFilter] = useState('hoy');
-  const [allSales, setAllSales] = useState<any[]>([]);
+  const { format } = useCurrency();
+  const { settings } = useConfig();
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProducts: 0,
@@ -98,7 +98,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Panel de Control</h2>
-          <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de Henry SAS.</p>
+          <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de {settings.business_name}.</p>
         </div>
         <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
           {['hoy', 'semana', 'mes'].map((f) => (
@@ -117,10 +117,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Ventas Totales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
+        <StatCard title="Ventas Totales" value={format(stats.totalSales)} icon={ShoppingCart} trend="up" trendValue="12" />
         <StatCard title="Productos en Stock" value={stats.totalProducts.toLocaleString()} icon={Package} />
         <StatCard title="Nuevos Clientes" value={stats.totalCustomers.toString()} icon={Users} trend="up" trendValue="8" />
-        <StatCard title="Ingresos Estimados" value={formatCurrency(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
+        <StatCard title="Ingresos Estimados" value={format(stats.netIncome)} icon={TrendingUp} trend="up" trendValue="5" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -137,7 +137,7 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="h-64 w-full relative">
             <svg viewBox="0 0 800 200" className="w-full h-full drop-shadow-2xl">
               <defs>
@@ -146,17 +146,17 @@ export const Dashboard: React.FC = () => {
                   <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <path 
-                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40" 
-                fill="none" 
-                stroke="#0ea5e9" 
-                strokeWidth="4" 
-                strokeLinecap="round" 
+              <path
+                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40"
+                fill="none"
+                stroke="#0ea5e9"
+                strokeWidth="4"
+                strokeLinecap="round"
                 className="animate-dash"
               />
-              <path 
-                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40 L 800 200 L 0 200 Z" 
-                fill="url(#gradient)" 
+              <path
+                d="M 0 150 Q 100 80 200 120 T 400 60 T 600 100 T 800 40 L 800 200 L 0 200 Z"
+                fill="url(#gradient)"
               />
               {/* Points */}
               <circle cx="200" cy="120" r="6" fill="white" stroke="#0ea5e9" strokeWidth="3" />
@@ -164,7 +164,7 @@ export const Dashboard: React.FC = () => {
               <circle cx="600" cy="100" r="6" fill="white" stroke="#0ea5e9" strokeWidth="3" />
             </svg>
           </div>
-          
+
           <div className="flex justify-between mt-6 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
             <span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
           </div>
@@ -222,7 +222,7 @@ export const Dashboard: React.FC = () => {
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</p>
-                  <p className="text-lg font-black text-brand-600">{formatCurrency(sale.total)}</p>
+                  <p className="text-lg font-black text-brand-600">{format(sale.total)}</p>
                 </div>
                 <div className="px-2 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 capitalize">
                   {sale.payment_method}

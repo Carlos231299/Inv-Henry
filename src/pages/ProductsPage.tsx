@@ -3,7 +3,8 @@ import { Plus, Edit2, Trash2, Search, Package, Barcode, TrendingUp } from 'lucid
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
-import { formatCurrency } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
+import { useConfig } from '../context/ConfigContext';
 
 interface Product {
   id: number;
@@ -24,10 +25,15 @@ interface Category {
 }
 
 export const ProductsPage: React.FC = () => {
+  const { format } = useCurrency();
+  const { settings } = useConfig();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     code: '',
@@ -57,20 +63,48 @@ export const ProductsPage: React.FC = () => {
     fetchData();
   }, []);
 
+  const fetchPriceHistory = async (product: Product) => {
+    try {
+      const res = await api.get(`/products/${product.id}/price-history`);
+      setPriceHistory(res.data);
+      setSelectedProduct(product);
+      setIsHistoryModalOpen(true);
+    } catch (error) {
+      toast.error('Error al cargar historial');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const result = await Swal.fire({
+      title: '¿Confirmar cambios?',
+      text: editingProduct 
+        ? `¿Estás seguro de actualizar el producto "${formData.name}"?`
+        : '¿Deseas registrar este nuevo producto?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0ea5e9',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, formData);
-        toast.success('Producto actualizado');
+        toast.success('Producto actualizado con éxito');
       } else {
         await api.post('/products', formData);
-        toast.success('Producto creado');
+        toast.success('Producto registrado correctamente');
       }
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('Error al guardar');
+      toast.error('Error al procesar la solicitud');
     }
   };
 
@@ -108,7 +142,7 @@ export const ProductsPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Inventario de Productos</h2>
-          <p className="text-slate-500 font-medium">Gestiona y controla las existencias de Henry SAS.</p>
+          <p className="text-slate-500 font-medium">Gestiona y controla las existencias de {settings.business_name}.</p>
         </div>
         <button 
           onClick={() => {
@@ -146,7 +180,7 @@ export const ProductsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Valor Inventario</p>
-              <h3 className="text-2xl font-black text-slate-800">{formatCurrency(totalValue)}</h3>
+              <h3 className="text-2xl font-black text-slate-800">{format(totalValue)}</h3>
             </div>
           </div>
         </div>
@@ -217,20 +251,35 @@ export const ProductsPage: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td className="font-semibold text-brand-600">{formatCurrency(p.price_sell)}</td>
-                  <td className="text-right space-x-1">
+                  <td className="font-semibold text-brand-600">{format(p.price_sell)}</td>
+                  <td className="text-right space-x-2">
+                    <button 
+                      onClick={() => fetchPriceHistory(p)}
+                      className="btn btn-ghost btn-sm text-emerald-600 hover:bg-emerald-50 rounded-xl tooltip"
+                      title="Historial de Costos"
+                    >
+                      <TrendingUp size={18} />
+                    </button>
                     <button 
                       onClick={() => {
                         setEditingProduct(p);
-                        setFormData({ ...p, category_id: p.category_id?.toString() || '' });
+                        setFormData({
+                          code: p.code, name: p.name, description: p.description,
+                          price_buy: p.price_buy, price_sell: p.price_sell,
+                          stock: p.stock, min_stock: p.min_stock,
+                          category_id: p.category_id?.toString() || ''
+                        });
                         setIsModalOpen(true);
                       }}
-                      className="btn btn-ghost btn-sm text-brand-600 rounded-lg"
+                      className="btn btn-ghost btn-sm text-brand-600 hover:bg-brand-50 rounded-xl"
                     >
-                      <Edit2 size={16} />
+                      <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(p.id)} className="btn btn-ghost btn-sm text-red-500 rounded-lg">
-                      <Trash2 size={16} />
+                    <button 
+                      onClick={() => handleDelete(p.id)}
+                      className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 rounded-xl"
+                    >
+                      <Trash2 size={18} />
                     </button>
                   </td>
                 </tr>
@@ -284,23 +333,27 @@ export const ProductsPage: React.FC = () => {
                   </select>
                 </div>
                 <div className="form-control">
-                  <label className="label"><span className="label-text font-semibold">Precio Compra</span></label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input input-bordered rounded-xl"
-                    value={formData.price_buy}
-                    onChange={(e) => setFormData({...formData, price_buy: parseFloat(e.target.value)})}
-                  />
+                  <label className="label"><span className="label-text font-semibold text-slate-600">Precio Compra (Ponderado)</span></label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={`input input-bordered rounded-xl w-full ${editingProduct ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
+                      value={formData.price_buy === 0 ? '' : Math.round(formData.price_buy * 1000)}
+                      onChange={(e) => !editingProduct && setFormData({...formData, price_buy: (parseFloat(e.target.value) || 0) / 1000})}
+                      readOnly={!!editingProduct}
+                    />
+                    {editingProduct && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">Campo Calculado</span>
+                    )}
+                  </div>
                 </div>
                 <div className="form-control">
                   <label className="label"><span className="label-text font-semibold">Precio Venta</span></label>
                   <input
                     type="number"
-                    step="0.01"
                     className="input input-bordered rounded-xl"
-                    value={formData.price_sell}
-                    onChange={(e) => setFormData({...formData, price_sell: parseFloat(e.target.value)})}
+                    value={formData.price_sell === 0 ? '' : Math.round(formData.price_sell * 1000)}
+                    onChange={(e) => setFormData({...formData, price_sell: (parseFloat(e.target.value) || 0) / 1000})}
                     required
                   />
                 </div>
@@ -328,6 +381,84 @@ export const ProductsPage: React.FC = () => {
                 <button type="submit" className="btn btn-primary flex-1 rounded-xl">Guardar Producto</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Historial de Precios */}
+      {isHistoryModalOpen && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight">Historial de Costos</h3>
+                <p className="text-slate-500 text-sm font-medium">{selectedProduct.name} - {selectedProduct.code}</p>
+              </div>
+              <button onClick={() => setIsHistoryModalOpen(false)} className="btn btn-ghost btn-sm btn-circle">✕</button>
+            </div>
+            
+            <div className="p-8">
+              <div className="bg-slate-50 rounded-3xl p-6 mb-6 flex justify-between items-center border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Costo Actual (Ponderado)</p>
+                  <h4 className="text-2xl font-black text-brand-600">{format(selectedProduct.price_buy)}</h4>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Última Compra</p>
+                  <h4 className="text-lg font-bold text-slate-700">
+                    {priceHistory.length > 0 ? new Date(priceHistory[0].date).toLocaleDateString() : 'N/A'}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-slate-100">
+                <table className="table w-full">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest">
+                      <th className="py-3">Fecha</th>
+                      <th className="py-3">Proveedor</th>
+                      <th className="py-3 text-center">Cant.</th>
+                      <th className="py-3 text-right">Precio Compra</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {priceHistory.map((entry, i) => (
+                      <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td className="text-xs font-bold text-slate-600">{new Date(entry.date).toLocaleDateString()}</td>
+                        <td className="text-xs font-black text-slate-800">{entry.supplier_name}</td>
+                        <td className="text-xs font-bold text-slate-600 text-center">{entry.quantity}</td>
+                        <td className="text-right">
+                          <span className={`text-sm font-black ${
+                            i < priceHistory.length - 1 && entry.price < priceHistory[i+1].price 
+                              ? 'text-emerald-600' 
+                              : i < priceHistory.length - 1 && entry.price > priceHistory[i+1].price
+                                ? 'text-red-600'
+                                : 'text-slate-700'
+                          }`}>
+                            {format(entry.price)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {priceHistory.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-slate-400 italic text-sm">
+                          No hay historial de compras para este producto.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="btn btn-ghost px-8 rounded-xl font-bold"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

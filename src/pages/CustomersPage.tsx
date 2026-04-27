@@ -41,18 +41,35 @@ export const CustomersPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = await Swal.fire({
+      title: '¿Confirmar cambios?',
+      text: editingCustomer 
+        ? `¿Deseas actualizar los datos de "${formData.name}"?`
+        : '¿Deseas registrar este nuevo cliente?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0ea5e9',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       if (editingCustomer) {
         await api.put(`/customers/${editingCustomer.id}`, formData);
-        toast.success('Cliente actualizado');
+        toast.success('Cliente actualizado con éxito');
       } else {
         await api.post('/customers', formData);
-        toast.success('Cliente creado');
+        toast.success('Cliente registrado correctamente');
       }
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('Error al guardar');
+      toast.error('Error al guardar la información');
     }
   };
 

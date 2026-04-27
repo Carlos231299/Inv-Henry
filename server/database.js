@@ -88,6 +88,9 @@ export const initDB = async () => {
       customer_id INTEGER,
       total REAL NOT NULL,
       payment_method TEXT DEFAULT 'efectivo',
+      cash_received REAL,
+      change_given REAL,
+      invoice_number TEXT,
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
@@ -114,6 +117,7 @@ export const initDB = async () => {
       user_id INTEGER,
       supplier_id INTEGER,
       total REAL NOT NULL,
+      status TEXT DEFAULT 'completed',
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
     )
@@ -129,6 +133,14 @@ export const initDB = async () => {
       price REAL NOT NULL,
       FOREIGN KEY (purchase_id) REFERENCES purchases (id),
       FOREIGN KEY (product_id) REFERENCES products (id)
+    )
+  `);
+
+  // Settings Table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
     )
   `);
 
@@ -171,7 +183,7 @@ const seedData = async () => {
   for (const s of suppliers) {
     const exists = await db.get('SELECT id FROM suppliers WHERE nit = ?', s.nit);
     if (!exists) {
-      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES (?, ?, ?, ?, ?)', 
+      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES (?, ?, ?, ?, ?)',
         [s.name, s.nit, s.phone, s.address, s.email]);
     }
   }
@@ -195,11 +207,29 @@ const seedData = async () => {
     const exists = await db.get('SELECT id FROM products WHERE code = ?', p.code);
     if (!exists) {
       await db.run(`INSERT INTO products (code, name, description, price_buy, price_sell, stock, min_stock, category_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [p.code, p.name, p.description, p.price_buy, p.price_sell, p.stock, p.min_stock, p.category_id]);
     } else {
       // Update prices for existing items if they are too low (meaning they were seeded with dollar values)
       await db.run('UPDATE products SET price_buy = ?, price_sell = ? WHERE code = ? AND price_sell < 1000', [p.price_buy, p.price_sell, p.code]);
+    }
+  }
+
+  const defaultSettings = [
+    { key: 'business_name', value: 'Henry SAS' },
+    { key: 'nit', value: '901.234.567-8' },
+    { key: 'currency', value: 'COP' },
+    { key: 'currency_locale', value: 'es-CO' },
+    { key: 'address', value: 'Calle 123 #45-67, Bogotá' },
+    { key: 'phone', value: '300 123 4567' },
+    { key: 'low_stock_alert', value: '5' },
+    { key: 'daily_summary_email', value: 'admin@henrysas.com' }
+  ];
+
+  for (const s of defaultSettings) {
+    const exists = await db.get('SELECT key FROM settings WHERE key = ?', s.key);
+    if (!exists) {
+      await db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [s.key, s.value]);
     }
   }
 
