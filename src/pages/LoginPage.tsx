@@ -3,6 +3,7 @@ import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useConfig } from '../context/ConfigContext';
 
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +13,7 @@ export const LoginPage: React.FC = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { settings } = useConfig();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ export const LoginPage: React.FC = () => {
     
     try {
       await login(username, password);
-      toast.success('Bienvenido a Henry SAS');
+      toast.success(`Bienvenido a ${settings.business_name}`);
       navigate('/');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al iniciar sesión');
@@ -41,7 +43,7 @@ export const LoginPage: React.FC = () => {
           <div className="p-8">
             <div className="flex flex-col items-center mb-8">
               <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-4 shadow-xl border border-slate-100 p-2">
-                <img src="/favicon.png" alt="Logo Henry SAS" className="w-full h-full object-contain" />
+                <img src="/favicon.png" alt={`Logo ${settings.business_name}`} className="w-full h-full object-contain" />
               </div>
               <h1 className="text-2xl font-bold text-slate-800 text-center">Bienvenido de nuevo</h1>
               <p className="text-slate-500 text-center mt-2">Ingresa tus credenciales para acceder</p>
@@ -126,7 +128,7 @@ export const LoginPage: React.FC = () => {
             </form>
           </div>
           <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-center">
-            <span className="text-xs text-slate-400">© 2026 Henry SAS - Sistema de Inventario</span>
+            <span className="text-xs text-slate-400">© {new Date().getFullYear()} {settings.business_name} - Sistema de Inventario</span>
           </div>
         </div>
       </div>

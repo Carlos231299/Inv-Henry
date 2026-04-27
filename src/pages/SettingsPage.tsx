@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Settings, Shield, Bell, Save, User, Key, Mail, AlertTriangle, Coins } from 'lucide-react';
 import { useConfig } from '../context/ConfigContext';
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSettings, isLoading } = useConfig();
@@ -19,6 +20,21 @@ export const SettingsPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = await Swal.fire({
+      title: '¿Guardar configuración?',
+      text: '¿Estás seguro de que deseas actualizar la configuración general del sistema?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0ea5e9',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, aplicar cambios',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await updateSettings(formData);
       toast.success('Configuración guardada correctamente');
@@ -39,7 +55,7 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-8 pb-20">
       <div>
         <h2 className="text-3xl font-black text-slate-800 tracking-tight">Configuración</h2>
-        <p className="text-slate-500 font-medium">Administra las preferencias de Henry SAS</p>
+        <p className="text-slate-500 font-medium">Administra las preferencias de {settings.business_name}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">

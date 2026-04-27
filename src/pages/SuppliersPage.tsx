@@ -41,18 +41,35 @@ export const SuppliersPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = await Swal.fire({
+      title: '¿Confirmar cambios?',
+      text: editingSupplier 
+        ? `¿Deseas actualizar la información de "${formData.name}"?`
+        : '¿Deseas registrar este nuevo proveedor?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0ea5e9',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       if (editingSupplier) {
         await api.put(`/suppliers/${editingSupplier.id}`, formData);
-        toast.success('Proveedor actualizado');
+        toast.success('Proveedor actualizado con éxito');
       } else {
         await api.post('/suppliers', formData);
-        toast.success('Proveedor creado');
+        toast.success('Proveedor registrado correctamente');
       }
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('Error al guardar');
+      toast.error('Error al guardar la información');
     }
   };
 

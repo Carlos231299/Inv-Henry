@@ -88,6 +88,9 @@ export const initDB = async () => {
       customer_id INTEGER,
       total REAL NOT NULL,
       payment_method TEXT DEFAULT 'efectivo',
+      cash_received REAL,
+      change_given REAL,
+      invoice_number TEXT,
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
@@ -114,6 +117,7 @@ export const initDB = async () => {
       user_id INTEGER,
       supplier_id INTEGER,
       total REAL NOT NULL,
+      status TEXT DEFAULT 'completed',
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
     )
@@ -179,7 +183,7 @@ const seedData = async () => {
   for (const s of suppliers) {
     const exists = await db.get('SELECT id FROM suppliers WHERE nit = ?', s.nit);
     if (!exists) {
-      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES (?, ?, ?, ?, ?)', 
+      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES (?, ?, ?, ?, ?)',
         [s.name, s.nit, s.phone, s.address, s.email]);
     }
   }
@@ -203,7 +207,7 @@ const seedData = async () => {
     const exists = await db.get('SELECT id FROM products WHERE code = ?', p.code);
     if (!exists) {
       await db.run(`INSERT INTO products (code, name, description, price_buy, price_sell, stock, min_stock, category_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [p.code, p.name, p.description, p.price_buy, p.price_sell, p.stock, p.min_stock, p.category_id]);
     }
   }

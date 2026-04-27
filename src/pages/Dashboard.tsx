@@ -3,6 +3,7 @@ import { ShoppingCart, Package, Users, TrendingUp, ArrowUpRight, ArrowDownRight 
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../hooks/useCurrency';
+import { useConfig } from '../context/ConfigContext';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -25,6 +26,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { format } = useCurrency();
+  const { settings } = useConfig();
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProducts: 0,
@@ -71,7 +73,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Panel de Control</h2>
-          <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de Henry SAS.</p>
+          <p className="text-slate-500 font-medium">Bienvenido de nuevo, {user?.name || 'Admin'}. Aquí está el resumen de {settings.business_name}.</p>
         </div>
         <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
           <button className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-sm font-bold">Hoy</button>
