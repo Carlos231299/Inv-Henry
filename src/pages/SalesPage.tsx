@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, Printer, History, Eye } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, Eye } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
@@ -33,7 +33,7 @@ interface Sale {
 }
 
 export const SalesPage: React.FC = () => {
-  const { format, currency } = useCurrency();
+  const { format } = useCurrency();
   const { settings: globalSettings } = useConfig();
   const [activeTab, setActiveTab] = useState<'history'>('history');
   const [products, setProducts] = useState<Product[]>([]);

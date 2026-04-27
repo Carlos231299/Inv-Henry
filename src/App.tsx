@@ -6,7 +6,6 @@ import { Dashboard } from './pages/Dashboard';
 import { ProductsPage } from './pages/ProductsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { SalesPage } from './pages/SalesPage';
-import { InventoryPage } from './pages/InventoryPage';
 import { SuppliersPage } from './pages/SuppliersPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { PurchasesPage } from './pages/PurchasesPage';

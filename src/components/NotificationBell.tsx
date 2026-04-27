@@ -20,7 +20,7 @@ export const NotificationBell: React.FC = () => {
   const fetchLowStock = async () => {
     try {
       const res = await api.get('/products');
-      const globalMin = settings.stock_min_global || 5;
+      const globalMin = Number(settings.low_stock_alert) || 5;
       
       const lowStock = res.data.filter((p: any) => {
         const threshold = p.min_stock > 0 ? p.min_stock : globalMin;
@@ -90,7 +90,7 @@ export const NotificationBell: React.FC = () => {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-1">
                         Existencia: <span className="text-red-600">{product.stock}</span> 
                         <span className="mx-2">|</span> 
-                        Límite: {product.min_stock || settings.stock_min_global}
+                        Límite: {product.min_stock || settings.low_stock_alert}
                       </p>
                       <button 
                         onClick={() => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Calendar, Download, Filter } from 'lucide-react';
+import { TrendingUp, DollarSign, Download } from 'lucide-react';
 import api from '../services/api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useConfig } from '../context/ConfigContext';

@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../hooks/useCurrency';
 import { useConfig } from '../context/ConfigContext';
+import { cn } from '../utils/cn';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -35,6 +36,8 @@ export const Dashboard: React.FC = () => {
     recentSales: [] as any[],
     lowStockProducts: [] as any[]
   });
+  const [filter, setFilter] = useState('mes');
+  const [allSales, setAllSales] = useState<any[]>([]);
 
   const calculateStats = (sales: any[], products: any[], customers: any[], currentFilter: string) => {
     const now = new Date();
