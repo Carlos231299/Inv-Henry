@@ -30,6 +30,7 @@ interface Sale {
   total: number;
   payment_method: string;
   invoice_number: string;
+  status?: string;
 }
 
 export const SalesPage: React.FC = () => {
@@ -47,6 +48,7 @@ export const SalesPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
+  const [cashReceived, setCashReceived] = useState<string>('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
