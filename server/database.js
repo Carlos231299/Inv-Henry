@@ -1,39 +1,61 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import pg from 'pg';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 
+const { Pool } = pg;
 dotenv.config();
 
-const dbPath = process.env.DB_PATH || './inventory.db';
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-export let db;
+export const db = {
+  get: async (sql, params) => {
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
+    const finalParams = Array.isArray(params) ? params : (params !== undefined ? [params] : []);
+    const res = await pool.query(pgSql, finalParams);
+    return res.rows[0];
+  },
+  all: async (sql, params) => {
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
+    const finalParams = Array.isArray(params) ? params : (params !== undefined ? [params] : []);
+    const res = await pool.query(pgSql, finalParams);
+    return res.rows;
+  },
+  run: async (sql, params) => {
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
+    const finalParams = Array.isArray(params) ? params : (params !== undefined ? [params] : []);
+    const res = await pool.query(pgSql, finalParams);
+    return { lastID: res.rows[0]?.id || null, changes: res.rowCount };
+  },
+  exec: async (sql) => {
+    await pool.query(sql);
+  }
+};
 
 export const initDB = async () => {
-  db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-
-  // Enable foreign keys
-  await db.get('PRAGMA foreign_keys = ON');
-
   // Users Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT DEFAULT 'vendedor',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
   // Categories Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT
     )
@@ -42,23 +64,22 @@ export const initDB = async () => {
   // Products Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       code TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
-      price_buy REAL DEFAULT 0,
-      price_sell REAL NOT NULL,
+      price_buy DECIMAL(12,2) DEFAULT 0,
+      price_sell DECIMAL(12,2) NOT NULL,
       stock INTEGER DEFAULT 0,
       min_stock INTEGER DEFAULT 5,
-      category_id INTEGER,
-      FOREIGN KEY (category_id) REFERENCES categories (id)
+      category_id INTEGER REFERENCES categories(id)
     )
   `);
 
   // Suppliers Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS suppliers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       nit TEXT UNIQUE,
       phone TEXT,
@@ -70,7 +91,7 @@ export const initDB = async () => {
   // Customers Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS customers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       document TEXT UNIQUE,
       phone TEXT,
@@ -82,57 +103,49 @@ export const initDB = async () => {
   // Sales Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS sales (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      user_id INTEGER,
-      customer_id INTEGER,
-      total REAL NOT NULL,
+      id SERIAL PRIMARY KEY,
+      date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      user_id INTEGER REFERENCES users(id),
+      customer_id INTEGER REFERENCES customers(id),
+      total DECIMAL(12,2) NOT NULL,
       payment_method TEXT DEFAULT 'efectivo',
-      cash_received REAL,
-      change_given REAL,
-      invoice_number TEXT,
-      FOREIGN KEY (user_id) REFERENCES users (id),
-      FOREIGN KEY (customer_id) REFERENCES customers (id)
+      cash_received DECIMAL(12,2),
+      change_given DECIMAL(12,2),
+      invoice_number TEXT
     )
   `);
 
   // Sale Items
   await db.exec(`
     CREATE TABLE IF NOT EXISTS sale_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sale_id INTEGER,
-      product_id INTEGER,
+      id SERIAL PRIMARY KEY,
+      sale_id INTEGER REFERENCES sales(id),
+      product_id INTEGER REFERENCES products(id),
       quantity INTEGER NOT NULL,
-      price REAL NOT NULL,
-      FOREIGN KEY (sale_id) REFERENCES sales (id),
-      FOREIGN KEY (product_id) REFERENCES products (id)
+      price DECIMAL(12,2) NOT NULL
     )
   `);
 
   // Purchases Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS purchases (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      user_id INTEGER,
-      supplier_id INTEGER,
-      total REAL NOT NULL,
-      status TEXT DEFAULT 'completed',
-      FOREIGN KEY (user_id) REFERENCES users (id),
-      FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+      id SERIAL PRIMARY KEY,
+      date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      user_id INTEGER REFERENCES users(id),
+      supplier_id INTEGER REFERENCES suppliers(id),
+      total DECIMAL(12,2) NOT NULL,
+      status TEXT DEFAULT 'completed'
     )
   `);
 
   // Purchase Items
   await db.exec(`
     CREATE TABLE IF NOT EXISTS purchase_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      purchase_id INTEGER,
-      product_id INTEGER,
+      id SERIAL PRIMARY KEY,
+      purchase_id INTEGER REFERENCES purchases(id),
+      product_id INTEGER REFERENCES products(id),
       quantity INTEGER NOT NULL,
-      price REAL NOT NULL,
-      FOREIGN KEY (purchase_id) REFERENCES purchases (id),
-      FOREIGN KEY (product_id) REFERENCES products (id)
+      price DECIMAL(12,2) NOT NULL
     )
   `);
 
@@ -145,14 +158,11 @@ export const initDB = async () => {
   `);
 
   // Create default admin user if not exists
-  const admin = await db.get('SELECT * FROM users WHERE username = ?', 'admin');
+  const admin = await db.get('SELECT * FROM users WHERE username = $1', ['admin']);
   if (!admin) {
     const hashedPassword = bcrypt.hashSync('admin123', 10);
-    await db.run('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)',
-      'admin',
-      hashedPassword,
-      'Administrador Principal',
-      'admin'
+    await db.run('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)',
+      ['admin', hashedPassword, 'Administrador Principal', 'admin']
     );
     console.log('Usuario administrador creado por defecto.');
   }
@@ -169,9 +179,9 @@ const seedData = async () => {
   ];
 
   for (const cat of categories) {
-    const exists = await db.get('SELECT id FROM categories WHERE name = ?', cat.name);
+    const exists = await db.get('SELECT id FROM categories WHERE name = $1', [cat.name]);
     if (!exists) {
-      await db.run('INSERT INTO categories (name, description) VALUES (?, ?)', [cat.name, cat.description]);
+      await db.run('INSERT INTO categories (name, description) VALUES ($1, $2)', [cat.name, cat.description]);
     }
   }
 
@@ -181,9 +191,9 @@ const seedData = async () => {
   ];
 
   for (const s of suppliers) {
-    const exists = await db.get('SELECT id FROM suppliers WHERE nit = ?', s.nit);
+    const exists = await db.get('SELECT id FROM suppliers WHERE nit = $1', [s.nit]);
     if (!exists) {
-      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES (?, ?, ?, ?, ?)',
+      await db.run('INSERT INTO suppliers (name, nit, phone, address, email) VALUES ($1, $2, $3, $4, $5)',
         [s.name, s.nit, s.phone, s.address, s.email]);
     }
   }
@@ -204,10 +214,10 @@ const seedData = async () => {
   ];
 
   for (const p of products) {
-    const exists = await db.get('SELECT id FROM products WHERE code = ?', p.code);
+    const exists = await db.get('SELECT id FROM products WHERE code = $1', [p.code]);
     if (!exists) {
       await db.run(`INSERT INTO products (code, name, description, price_buy, price_sell, stock, min_stock, category_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [p.code, p.name, p.description, p.price_buy, p.price_sell, p.stock, p.min_stock, p.category_id]);
     } else {
       // Update prices for existing items if they are too low (meaning they were seeded with dollar values)
@@ -227,9 +237,9 @@ const seedData = async () => {
   ];
 
   for (const s of defaultSettings) {
-    const exists = await db.get('SELECT key FROM settings WHERE key = ?', s.key);
+    const exists = await db.get('SELECT key FROM settings WHERE key = $1', [s.key]);
     if (!exists) {
-      await db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [s.key, s.value]);
+      await db.run('INSERT INTO settings (key, value) VALUES ($1, $2)', [s.key, s.value]);
     }
   }
 

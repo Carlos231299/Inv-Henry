@@ -1,0 +1,25 @@
+services:
+  # Backend API
+  - type: web
+    name: inv-henry-api
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 4000
+
+  # Frontend
+  - type: web
+    name: inv-henry-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
